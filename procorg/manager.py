@@ -4,19 +4,37 @@ import subprocess
 import threading
 import psutil
 import os
+import pwd
 from datetime import datetime
 from typing import Dict, Optional, List
 from pathlib import Path
 from .storage import Storage
 
 
+def demote(uid: int, gid: int):
+    """Demote process privileges to specified uid/gid.
+
+    This function is used as preexec_fn in subprocess.Popen to ensure
+    the child process runs with the correct user privileges.
+
+    Args:
+        uid: User ID to run as
+        gid: Group ID to run as
+    """
+    def set_ids():
+        os.setgid(gid)
+        os.setuid(uid)
+    return set_ids
+
+
 class ProcessExecution:
     """Represents a single execution of a process."""
 
-    def __init__(self, name: str, script_path: str, storage: Storage):
+    def __init__(self, name: str, script_path: str, storage: Storage, uid: Optional[int] = None):
         self.name = name
         self.script_path = script_path
         self.storage = storage
+        self.uid = uid if uid is not None else os.getuid()
         self.execution_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.process: Optional[subprocess.Popen] = None
         self.pid: Optional[int] = None
@@ -34,11 +52,24 @@ class ProcessExecution:
             stdout_file = open(stdout_log, 'w')
             stderr_file = open(stderr_log, 'w')
 
+            # Prepare preexec_fn for privilege demotion if running as root
+            preexec_fn = None
+            if os.getuid() == 0:  # Running as root
+                # Get the GID for the target user
+                try:
+                    user_info = pwd.getpwuid(self.uid)
+                    gid = user_info.pw_gid
+                    preexec_fn = demote(self.uid, gid)
+                    print(f"Running process {self.name} as uid={self.uid}, gid={gid}")
+                except KeyError:
+                    print(f"Warning: Could not find user info for uid {self.uid}, running as current user")
+
             self.process = subprocess.Popen(
                 ['/bin/bash', self.script_path],
                 stdout=stdout_file,
                 stderr=stderr_file,
-                cwd=os.path.dirname(self.script_path) or '.'
+                cwd=os.path.dirname(self.script_path) or '.',
+                preexec_fn=preexec_fn
             )
 
             self.pid = self.process.pid
@@ -108,8 +139,9 @@ class ProcessExecution:
 class ProcessManager:
     """Manages process executions."""
 
-    def __init__(self, storage: Storage):
+    def __init__(self, storage: Storage, uid: Optional[int] = None):
         self.storage = storage
+        self.uid = uid if uid is not None else os.getuid()
         self.executions: Dict[str, List[ProcessExecution]] = {}
         self.lock = threading.Lock()
 
@@ -131,7 +163,7 @@ class ProcessManager:
             print(f"Script not found: {script_path}")
             return None
 
-        execution = ProcessExecution(name, script_path, self.storage)
+        execution = ProcessExecution(name, script_path, self.storage, uid=self.uid)
 
         with self.lock:
             if name not in self.executions:

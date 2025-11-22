@@ -30,16 +30,39 @@
             border-radius: 8px;
             margin-bottom: 20px;
             border-left: 4px solid #007acc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        h1 {
+        .header-left h1 {
             color: #007acc;
             margin-bottom: 5px;
         }
 
-        .subtitle {
+        .header-left .subtitle {
             color: #858585;
             font-size: 14px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-name {
+            color: #4ec9b0;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            background: #3e3e3e;
+            padding: 8px 16px;
+        }
+
+        .logout-btn:hover {
+            background: #505050;
         }
 
         .scheduler-info {
@@ -364,8 +387,14 @@
 <body>
     <div class="container">
         <header>
-            <h1>ProcOrg</h1>
-            <div class="subtitle">Process Orchestration and Management</div>
+            <div class="header-left">
+                <h1>ProcOrg</h1>
+                <div class="subtitle">Process Orchestration and Management</div>
+            </div>
+            <div class="user-info">
+                <span class="user-name" id="user-name">Loading...</span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
         </header>
 
         <div class="scheduler-info">
@@ -442,6 +471,41 @@
         const socket = io();
         let currentLogsProcess = null;
         let currentLogsStream = 'stdout';
+
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/whoami');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.authenticated) {
+                        // Update user info
+                        const userInfo = result.user;
+                        document.getElementById('user-name').textContent = userInfo.username + (userInfo.is_root ? ' (root)' : '');
+                        return true;
+                    }
+                }
+                // Not authenticated - redirect to login
+                window.location.href = '/login';
+                return false;
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        // Logout function
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Logout failed:', error);
+                // Redirect to login anyway
+                window.location.href = '/login';
+            }
+        }
 
         socket.on('connect', () => {
             console.log('Connected to server');
@@ -715,9 +779,16 @@
         });
 
         // Initial load and periodic updates
-        updateProcesses();
-        updateSchedulerInfo();
-        setInterval(updateSchedulerInfo, 5000);
+        window.addEventListener('load', async () => {
+            // Check authentication first
+            const authenticated = await checkAuth();
+            if (authenticated) {
+                // Only load processes if authenticated
+                updateProcesses();
+                updateSchedulerInfo();
+                setInterval(updateSchedulerInfo, 5000);
+            }
+        });
     </script>
 </body>
 </html>
