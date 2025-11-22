@@ -65,6 +65,7 @@ check_running() {
 
 # launch browser if on a mac using the open command
 launch_browser() {
+    sleep 2  # Wait a moment for the server to start
     if [[ "$OSTYPE" == "darwin"* ]]; then
         open "http://localhost:$1"
     fi
