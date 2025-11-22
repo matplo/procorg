@@ -241,13 +241,23 @@ class ProcessManager:
                         is_running = False
                         status = "completed"
 
+                    # Parse start time from execution_id (format: YYYYMMDD_HHMMSS_microseconds)
+                    try:
+                        # execution_id format: 20231121_143025_123456
+                        date_part = execution_id.split('_')[0]  # YYYYMMDD
+                        time_part = execution_id.split('_')[1]  # HHMMSS
+                        start_time_str = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]} {time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+                        start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+                    except (IndexError, ValueError):
+                        start_time = None
+
                     # Build execution info from filesystem
                     latest_execution_info = {
                         "execution_id": execution_id,
                         "name": name,
                         "pid": None,
                         "status": status if is_running else "completed",
-                        "start_time": None,
+                        "start_time": start_time,
                         "end_time": None,
                         "exit_code": None,
                         "duration": None

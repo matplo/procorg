@@ -19,7 +19,8 @@
       "Bash(pkill:*)",
       "Bash(./start-web.sh:*)",
       "Bash(./stop-web.sh)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(./procorg.sh status:*)"
     ],
     "deny": [],
     "ask": []
