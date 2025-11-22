@@ -23,7 +23,7 @@ if [ -d "venv" ]; then
     source venv/bin/activate
 fi
 
-procorg $@
+procorg "$@"
 if [ $? -ne 0 ]; then
     echo "Failed to start ProcOrg. Please check the error messages above."
     exit 1
