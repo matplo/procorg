@@ -76,6 +76,12 @@ class ProcessExecution:
             self.start_time = datetime.now()
             self.status = "running"
 
+            # Save PID to file for cross-request status tracking
+            pid_file = self.storage.logs_dir / self.name / f"{self.execution_id}.pid"
+            pid_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(pid_file, 'w') as f:
+                f.write(str(self.pid))
+
             # Start a thread to monitor completion
             threading.Thread(target=self._monitor, args=(stdout_file, stderr_file), daemon=True).start()
 
@@ -99,6 +105,11 @@ class ProcessExecution:
         finally:
             stdout_file.close()
             stderr_file.close()
+
+            # Remove PID file when process completes
+            pid_file = self.storage.logs_dir / self.name / f"{self.execution_id}.pid"
+            if pid_file.exists():
+                pid_file.unlink()
 
     def stop(self) -> bool:
         """Stop the running process."""
@@ -194,13 +205,59 @@ class ProcessManager:
         """Get the status of a process."""
         with self.lock:
             executions = self.executions.get(name, [])
-            latest = executions[-1] if executions else None
+
+            # Check in-memory executions first
+            latest_in_memory = executions[-1] if executions else None
+            is_running_in_memory = any(e.status == "running" for e in executions)
+
+            # If no in-memory executions, check filesystem for latest
+            latest_execution_info = None
+            is_running = is_running_in_memory
+
+            if latest_in_memory:
+                latest_execution_info = latest_in_memory.get_info()
+            else:
+                # Scan filesystem for latest execution
+                execution_id = self._get_latest_execution_id(name)
+                if execution_id:
+                    # Check if this execution is still running by checking PID
+                    pid_file = self.storage.logs_dir / name / f"{execution_id}.pid"
+                    if pid_file.exists():
+                        try:
+                            with open(pid_file, 'r') as f:
+                                pid = int(f.read().strip())
+                            # Check if process is still running
+                            try:
+                                os.kill(pid, 0)  # Doesn't kill, just checks if exists
+                                is_running = True
+                                status = "running"
+                            except OSError:
+                                is_running = False
+                                status = "completed"  # Or could check exit code
+                        except (ValueError, FileNotFoundError):
+                            is_running = False
+                            status = "completed"
+                    else:
+                        is_running = False
+                        status = "completed"
+
+                    # Build execution info from filesystem
+                    latest_execution_info = {
+                        "execution_id": execution_id,
+                        "name": name,
+                        "pid": None,
+                        "status": status if is_running else "completed",
+                        "start_time": None,
+                        "end_time": None,
+                        "exit_code": None,
+                        "duration": None
+                    }
 
             return {
                 "name": name,
-                "latest_execution": latest.get_info() if latest else None,
+                "latest_execution": latest_execution_info,
                 "total_executions": len(executions),
-                "running": any(e.status == "running" for e in executions)
+                "running": is_running
             }
 
     def get_all_statuses(self) -> List[Dict]:

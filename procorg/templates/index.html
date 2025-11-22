@@ -471,6 +471,7 @@
         const socket = io();
         let currentLogsProcess = null;
         let currentLogsStream = 'stdout';
+        let logsPollingInterval = null;
 
         // Check authentication on page load
         async function checkAuth() {
@@ -524,7 +525,13 @@
         async function updateProcesses() {
             try {
                 const response = await fetch('/api/processes');
+                if (!response.ok) {
+                    console.error('Failed to fetch processes:', response.status, response.statusText);
+                    return;
+                }
+
                 const processes = await response.json();
+                console.log('Fetched processes:', processes.length, 'processes');
 
                 const grid = document.getElementById('processes-grid');
                 grid.innerHTML = '';
@@ -666,13 +673,14 @@
             document.getElementById('logs-title').textContent = `Logs: ${name} (${currentLogsStream})`;
             document.getElementById('logs-section').classList.add('active');
 
+            // Load logs immediately
             loadLogs();
 
-            // Subscribe to real-time updates
-            socket.emit('subscribe_logs', {
-                name: name,
-                stream: currentLogsStream
-            });
+            // Start polling for log updates every 2 seconds
+            if (logsPollingInterval) {
+                clearInterval(logsPollingInterval);
+            }
+            logsPollingInterval = setInterval(loadLogs, 2000);
         }
 
         async function loadLogs() {
@@ -690,17 +698,20 @@
             currentLogsStream = stream;
             document.getElementById('logs-title').textContent = `Logs: ${currentLogsProcess} (${stream})`;
 
+            // Load logs for new stream immediately
             loadLogs();
-
-            socket.emit('subscribe_logs', {
-                name: currentLogsProcess,
-                stream: stream
-            });
+            // Polling continues automatically
         }
 
         function closeLogs() {
             currentLogsProcess = null;
             document.getElementById('logs-section').classList.remove('active');
+
+            // Stop polling when logs are closed
+            if (logsPollingInterval) {
+                clearInterval(logsPollingInterval);
+                logsPollingInterval = null;
+            }
         }
 
         async function toggleScheduler() {
@@ -786,6 +797,9 @@
                 // Only load processes if authenticated
                 updateProcesses();
                 updateSchedulerInfo();
+
+                // Poll for updates every 2 seconds
+                setInterval(updateProcesses, 2000);
                 setInterval(updateSchedulerInfo, 5000);
             }
         });

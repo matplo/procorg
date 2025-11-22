@@ -16,7 +16,10 @@
       "Bash(tree:*)",
       "Bash(curl:*)",
       "Bash(python3:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(./start-web.sh:*)",
+      "Bash(./stop-web.sh)",
+      "Bash(pgrep:*)"
     ],
     "deny": [],
     "ask": []
