@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(pip install:*)",
+      "Bash(python3 -m pip install:*)",
+      "Bash(python3 -m venv:*)",
+      "Bash(source venv/bin/activate)",
+      "Bash(procorg register:*)",
+      "Bash(procorg list:*)",
+      "Bash(cat:*)",
+      "Bash(procorg logs:*)",
+      "Bash(procorg run:*)",
+      "Bash(procorg scheduler-info:*)",
+      "Bash(tree:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(pkill:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

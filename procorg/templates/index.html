@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProcOrg - Process Manager</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: #252526;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007acc;
+        }
+
+        h1 {
+            color: #007acc;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: #858585;
+            font-size: 14px;
+        }
+
+        .scheduler-info {
+            background: #252526;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scheduler-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ec9b0;
+        }
+
+        .status-indicator.stopped {
+            background: #858585;
+        }
+
+        .processes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .process-card {
+            background: #252526;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #007acc;
+            transition: transform 0.2s;
+        }
+
+        .process-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .process-card.running {
+            border-left-color: #4ec9b0;
+        }
+
+        .process-card.failed {
+            border-left-color: #f48771;
+        }
+
+        .process-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .process-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4ec9b0;
+        }
+
+        .process-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .process-status.running {
+            background: #4ec9b033;
+            color: #4ec9b0;
+        }
+
+        .process-status.idle {
+            background: #85858533;
+            color: #858585;
+        }
+
+        .process-status.failed {
+            background: #f4877133;
+            color: #f48771;
+        }
+
+        .process-status.completed {
+            background: #4ec9b033;
+            color: #4ec9b0;
+        }
+
+        .process-info {
+            font-size: 13px;
+            color: #858585;
+            margin-bottom: 10px;
+        }
+
+        .process-info div {
+            margin-bottom: 5px;
+        }
+
+        .process-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #005a9e;
+        }
+
+        button:disabled {
+            background: #3e3e3e;
+            color: #858585;
+            cursor: not-allowed;
+        }
+
+        button.danger {
+            background: #f48771;
+        }
+
+        button.danger:hover {
+            background: #d16969;
+        }
+
+        button.secondary {
+            background: #3e3e3e;
+        }
+
+        button.secondary:hover {
+            background: #505050;
+        }
+
+        .logs-section {
+            background: #252526;
+            border-radius: 8px;
+            padding: 20px;
+            display: none;
+        }
+
+        .logs-section.active {
+            display: block;
+        }
+
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .logs-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .logs-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .log-content {
+            background: #1e1e1e;
+            border: 1px solid #3e3e3e;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .log-content:empty::before {
+            content: 'No logs available';
+            color: #858585;
+            font-style: italic;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ec9b0;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #252526;
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            border-left: 4px solid #007acc;
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007acc;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #d4d4d4;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background: #1e1e1e;
+            border: 1px solid #3e3e3e;
+            border-radius: 4px;
+            color: #d4d4d4;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007acc;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 5px;
+            color: #858585;
+            font-size: 12px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .error-message {
+            background: #f4877133;
+            color: #f48771;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #4ec9b033;
+            color: #4ec9b0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .add-process-btn {
+            background: #4ec9b0;
+            margin-bottom: 20px;
+        }
+
+        .add-process-btn:hover {
+            background: #3da58a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ProcOrg</h1>
+            <div class="subtitle">Process Orchestration and Management</div>
+        </header>
+
+        <div class="scheduler-info">
+            <div class="scheduler-status">
+                <div class="status-indicator" id="scheduler-indicator"></div>
+                <span id="scheduler-status">Scheduler: Loading...</span>
+            </div>
+            <div>
+                <button id="scheduler-toggle" onclick="toggleScheduler()">Start Scheduler</button>
+            </div>
+        </div>
+
+        <button class="add-process-btn" onclick="openRegisterModal()">+ Add Process</button>
+
+        <div class="processes-grid" id="processes-grid">
+            <!-- Process cards will be inserted here -->
+        </div>
+
+        <div class="logs-section" id="logs-section">
+            <div class="logs-header">
+                <div class="logs-title" id="logs-title">Process Logs</div>
+                <div class="logs-controls">
+                    <button class="secondary" onclick="switchStream('stdout')">stdout</button>
+                    <button class="secondary" onclick="switchStream('stderr')">stderr</button>
+                    <button class="secondary" onclick="closeLogs()">Close</button>
+                </div>
+            </div>
+            <div class="log-content" id="log-content"></div>
+        </div>
+
+        <!-- Registration Modal -->
+        <div class="modal" id="register-modal">
+            <div class="modal-content">
+                <div class="modal-header">Register New Process</div>
+                <div id="register-message"></div>
+                <form id="register-form" onsubmit="registerProcess(event)">
+                    <div class="form-group">
+                        <label for="process-name">Process Name *</label>
+                        <input type="text" id="process-name" name="name" required
+                               placeholder="e.g., my-backup-script">
+                        <small>Unique identifier for the process (no spaces)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="script-path">Script Path *</label>
+                        <input type="text" id="script-path" name="script_path" required
+                               placeholder="e.g., /path/to/script.sh">
+                        <small>Absolute path to the shell script</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cron-expr">Cron Expression (optional)</label>
+                        <input type="text" id="cron-expr" name="cron_expr"
+                               placeholder="e.g., 0 2 * * * (daily at 2 AM)">
+                        <small>Leave empty for manual execution only. Examples: */5 * * * * (every 5 min), 0 9 * * * (daily at 9 AM)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description"
+                                  placeholder="Brief description of what this process does"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit">Register Process</button>
+                        <button type="button" class="secondary" onclick="closeRegisterModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentLogsProcess = null;
+        let currentLogsStream = 'stdout';
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('status_update', (statuses) => {
+            updateProcesses();
+        });
+
+        socket.on('log_update', (data) => {
+            if (data.name === currentLogsProcess && data.stream === currentLogsStream) {
+                document.getElementById('log-content').textContent = data.content;
+            }
+        });
+
+        async function updateProcesses() {
+            try {
+                const response = await fetch('/api/processes');
+                const processes = await response.json();
+
+                const grid = document.getElementById('processes-grid');
+                grid.innerHTML = '';
+
+                processes.forEach(proc => {
+                    const card = createProcessCard(proc);
+                    grid.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error fetching processes:', error);
+            }
+        }
+
+        async function updateSchedulerInfo() {
+            try {
+                const response = await fetch('/api/scheduler');
+                const info = await response.json();
+
+                const indicator = document.getElementById('scheduler-indicator');
+                const status = document.getElementById('scheduler-status');
+                const toggle = document.getElementById('scheduler-toggle');
+
+                if (info.running) {
+                    indicator.classList.remove('stopped');
+                    status.textContent = `Scheduler: Running (${info.scheduled_processes.length} scheduled)`;
+                    toggle.textContent = 'Stop Scheduler';
+                } else {
+                    indicator.classList.add('stopped');
+                    status.textContent = 'Scheduler: Stopped';
+                    toggle.textContent = 'Start Scheduler';
+                }
+            } catch (error) {
+                console.error('Error fetching scheduler info:', error);
+            }
+        }
+
+        function createProcessCard(proc) {
+            const card = document.createElement('div');
+            card.className = 'process-card';
+
+            const isRunning = proc.status?.running || false;
+            const latest = proc.status?.latest_execution;
+            const status = latest ? latest.status : 'idle';
+
+            if (isRunning) {
+                card.classList.add('running');
+            } else if (status === 'failed') {
+                card.classList.add('failed');
+            }
+
+            card.innerHTML = `
+                <div class="process-header">
+                    <div class="process-name">${proc.name}</div>
+                    <div class="process-status ${status}">${status}</div>
+                </div>
+                <div class="process-info">
+                    <div><strong>Script:</strong> ${proc.script_path}</div>
+                    ${proc.cron_expr ? `<div><strong>Schedule:</strong> ${proc.cron_expr}</div>` : ''}
+                    ${latest ? `<div><strong>Last run:</strong> ${new Date(latest.start_time).toLocaleString()}</div>` : ''}
+                    ${latest?.exit_code !== null ? `<div><strong>Exit code:</strong> ${latest.exit_code}</div>` : ''}
+                    ${proc.description ? `<div><strong>Description:</strong> ${proc.description}</div>` : ''}
+                </div>
+                <div class="process-actions">
+                    <button onclick="runProcess('${proc.name}')" ${isRunning ? 'disabled' : ''}>
+                        ${isRunning ? 'Running...' : 'Run'}
+                    </button>
+                    <button class="danger" onclick="stopProcess('${proc.name}')" ${!isRunning ? 'disabled' : ''}>
+                        Stop
+                    </button>
+                    <button class="secondary" onclick="viewLogs('${proc.name}')">
+                        Logs
+                    </button>
+                    <button class="danger" onclick="deleteProcess('${proc.name}')" ${isRunning ? 'disabled' : ''}>
+                        Delete
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        async function runProcess(name) {
+            try {
+                const response = await fetch(`/api/processes/${name}/run`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    updateProcesses();
+                } else {
+                    alert('Failed to start process: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function stopProcess(name) {
+            try {
+                const response = await fetch(`/api/processes/${name}/stop`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    updateProcesses();
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function deleteProcess(name) {
+            if (!confirm(`Are you sure you want to delete the process "${name}"?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/processes/${name}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    updateProcesses();
+                } else {
+                    alert('Failed to delete process: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function viewLogs(name) {
+            currentLogsProcess = name;
+            currentLogsStream = 'stdout';
+
+            document.getElementById('logs-title').textContent = `Logs: ${name} (${currentLogsStream})`;
+            document.getElementById('logs-section').classList.add('active');
+
+            loadLogs();
+
+            // Subscribe to real-time updates
+            socket.emit('subscribe_logs', {
+                name: name,
+                stream: currentLogsStream
+            });
+        }
+
+        async function loadLogs() {
+            try {
+                const response = await fetch(`/api/processes/${currentLogsProcess}/logs/${currentLogsStream}`);
+                const data = await response.json();
+
+                document.getElementById('log-content').textContent = data.content;
+            } catch (error) {
+                console.error('Error loading logs:', error);
+            }
+        }
+
+        function switchStream(stream) {
+            currentLogsStream = stream;
+            document.getElementById('logs-title').textContent = `Logs: ${currentLogsProcess} (${stream})`;
+
+            loadLogs();
+
+            socket.emit('subscribe_logs', {
+                name: currentLogsProcess,
+                stream: stream
+            });
+        }
+
+        function closeLogs() {
+            currentLogsProcess = null;
+            document.getElementById('logs-section').classList.remove('active');
+        }
+
+        async function toggleScheduler() {
+            try {
+                const response = await fetch('/api/scheduler');
+                const info = await response.json();
+
+                const action = info.running ? 'stop' : 'start';
+                await fetch(`/api/scheduler/${action}`, { method: 'POST' });
+
+                updateSchedulerInfo();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function openRegisterModal() {
+            document.getElementById('register-modal').classList.add('active');
+            document.getElementById('register-form').reset();
+            document.getElementById('register-message').innerHTML = '';
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('register-modal').classList.remove('active');
+            document.getElementById('register-form').reset();
+            document.getElementById('register-message').innerHTML = '';
+        }
+
+        async function registerProcess(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {
+                name: formData.get('name'),
+                script_path: formData.get('script_path'),
+                cron_expr: formData.get('cron_expr') || null,
+                description: formData.get('description') || ''
+            };
+
+            const messageDiv = document.getElementById('register-message');
+
+            try {
+                const response = await fetch('/api/processes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="success-message">Process "${data.name}" registered successfully!</div>`;
+                    form.reset();
+
+                    // Refresh the process list
+                    setTimeout(() => {
+                        updateProcesses();
+                        closeRegisterModal();
+                    }, 1500);
+                } else {
+                    messageDiv.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('register-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRegisterModal();
+            }
+        });
+
+        // Initial load and periodic updates
+        updateProcesses();
+        updateSchedulerInfo();
+        setInterval(updateSchedulerInfo, 5000);
+    </script>
+</body>
+</html>
