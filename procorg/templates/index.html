@@ -520,7 +520,7 @@
                     <div><strong>Script:</strong> ${proc.script_path}</div>
                     ${proc.cron_expr ? `<div><strong>Schedule:</strong> ${proc.cron_expr}</div>` : ''}
                     ${latest ? `<div><strong>Last run:</strong> ${new Date(latest.start_time).toLocaleString()}</div>` : ''}
-                    ${latest?.exit_code !== null ? `<div><strong>Exit code:</strong> ${latest.exit_code}</div>` : ''}
+                    ${latest && latest.exit_code !== null ? `<div><strong>Exit code:</strong> ${latest.exit_code}</div>` : ''}
                     ${proc.description ? `<div><strong>Description:</strong> ${proc.description}</div>` : ''}
                 </div>
                 <div class="process-actions">
