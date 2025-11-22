@@ -132,7 +132,7 @@ The web interface provides:
 - **Scheduler Control**: Start/stop the scheduler and view scheduled processes
 - **Modern UI**: Clean, dark theme with visual status indicators
 
-Access the web UI at `http://localhost:5000` (or use port 8080 if 5000 is in use)
+Access the web UI at `http://localhost:9777` (or use port 9778 if 9777 is in use)
 
 ## Architecture
 

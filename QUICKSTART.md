@@ -43,8 +43,8 @@ procorg status example
 source venv/bin/activate
 python3 -m procorg.web
 
-# Then open: http://localhost:5000
-# (If port 5000 is in use, the server will fail - use port 8080 instead)
+# Then open: http://localhost:9777
+# (If port 5000 is in use, the server will fail - use port 9778 instead)
 ```
 
 ### Web UI Features
