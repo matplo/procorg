@@ -24,7 +24,12 @@
       "Bash(./procorg.sh run:*)",
       "Bash(/tmp/start-web.out)",
       "Bash(/dev/null)",
-      "Bash(xargs ps:*)"
+      "Bash(xargs ps:*)",
+      "Bash(procorg --help:*)",
+      "Bash(procorg stop:*)",
+      "Bash(lsof:*)",
+      "Bash(ss:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

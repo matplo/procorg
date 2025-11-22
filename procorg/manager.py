@@ -223,8 +223,10 @@ class ProcessManager:
 
         # If not in memory, check filesystem for PID file
         execution_id = self._get_latest_execution_id(name)
+
         if execution_id:
             pid_file = self.storage.logs_dir / name / f"{execution_id}.pid"
+
             if pid_file.exists():
                 try:
                     with open(pid_file, 'r') as f:
@@ -233,32 +235,47 @@ class ProcessManager:
                     # Use psutil to stop the process and its children
                     try:
                         parent = psutil.Process(pid)
-                        for child in parent.children(recursive=True):
+
+                        children = parent.children(recursive=True)
+
+                        for child in children:
                             child.terminate()
                         parent.terminate()
 
                         # Wait a bit, then kill if still alive
                         parent.wait(timeout=5)
 
-                        # Clean up PID file
-                        pid_file.unlink()
+                        # Clean up PID file (may fail if owned by different user)
+                        try:
+                            pid_file.unlink()
+                        except PermissionError:
+                            pass  # Process was stopped, PID file cleanup is not critical
 
                         # Write exit code indicating manual stop
-                        exitcode_file = self.storage.logs_dir / name / f"{execution_id}.exitcode"
-                        with open(exitcode_file, 'w') as f:
-                            f.write("-15")  # SIGTERM
+                        try:
+                            exitcode_file = self.storage.logs_dir / name / f"{execution_id}.exitcode"
+                            with open(exitcode_file, 'w') as f:
+                                f.write("-15")  # SIGTERM
+                        except PermissionError:
+                            pass  # Exit code writing is not critical
 
                         return True
                     except psutil.NoSuchProcess:
                         # Process already stopped, clean up PID file
-                        pid_file.unlink()
+                        try:
+                            pid_file.unlink()
+                        except PermissionError:
+                            pass
                         return True
                     except psutil.TimeoutExpired:
                         # Force kill if didn't stop gracefully
                         for child in parent.children(recursive=True):
                             child.kill()
                         parent.kill()
-                        pid_file.unlink()
+                        try:
+                            pid_file.unlink()
+                        except PermissionError:
+                            pass
                         return True
                 except (ValueError, FileNotFoundError) as e:
                     print(f"Error reading PID file: {e}")
