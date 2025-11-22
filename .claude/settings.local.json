@@ -20,7 +20,11 @@
       "Bash(./start-web.sh:*)",
       "Bash(./stop-web.sh)",
       "Bash(pgrep:*)",
-      "Bash(./procorg.sh status:*)"
+      "Bash(./procorg.sh status:*)",
+      "Bash(./procorg.sh run:*)",
+      "Bash(/tmp/start-web.out)",
+      "Bash(/dev/null)",
+      "Bash(xargs ps:*)"
     ],
     "deny": [],
     "ask": []

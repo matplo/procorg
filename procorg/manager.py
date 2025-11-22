@@ -83,7 +83,9 @@ class ProcessExecution:
                 f.write(str(self.pid))
 
             # Start a thread to monitor completion
-            threading.Thread(target=self._monitor, args=(stdout_file, stderr_file), daemon=True).start()
+            # Note: Using daemon=False so the thread can complete even if the request handler returns
+            t = threading.Thread(target=self._monitor, args=(stdout_file, stderr_file), daemon=False)
+            t.start()
 
             return True
         except Exception as e:
@@ -94,8 +96,18 @@ class ProcessExecution:
 
     def _monitor(self, stdout_file, stderr_file):
         """Monitor process completion."""
+        import time
+
         try:
-            self.exit_code = self.process.wait()
+            # Use poll() in a loop instead of wait() to avoid hanging on unclosed pipes
+            # This is necessary because child processes may spawn grandchildren that keep
+            # stdout/stderr file descriptors open, causing wait() to hang indefinitely
+            while True:
+                self.exit_code = self.process.poll()
+                if self.exit_code is not None:
+                    break
+                time.sleep(0.1)  # Check every 100ms
+
             self.end_time = datetime.now()
             self.status = "completed" if self.exit_code == 0 else "failed"
         except Exception as e:
@@ -105,6 +117,14 @@ class ProcessExecution:
         finally:
             stdout_file.close()
             stderr_file.close()
+
+            # Save exit code to file for persistence
+            exitcode_file = self.storage.logs_dir / self.name / f"{self.execution_id}.exitcode"
+            try:
+                with open(exitcode_file, 'w') as f:
+                    f.write(str(self.exit_code if self.exit_code is not None else -1))
+            except Exception as e:
+                print(f"Failed to save exit code: {e}")
 
             # Remove PID file when process completes
             pid_file = self.storage.logs_dir / self.name / f"{self.execution_id}.pid"
@@ -251,6 +271,16 @@ class ProcessManager:
                     except (IndexError, ValueError):
                         start_time = None
 
+                    # Read exit code from file if available
+                    exit_code = None
+                    exitcode_file = self.storage.logs_dir / name / f"{execution_id}.exitcode"
+                    if exitcode_file.exists():
+                        try:
+                            with open(exitcode_file, 'r') as f:
+                                exit_code = int(f.read().strip())
+                        except (ValueError, FileNotFoundError):
+                            pass
+
                     # Build execution info from filesystem
                     latest_execution_info = {
                         "execution_id": execution_id,
@@ -259,7 +289,7 @@ class ProcessManager:
                         "status": status if is_running else "completed",
                         "start_time": start_time,
                         "end_time": None,
-                        "exit_code": None,
+                        "exit_code": exit_code,
                         "duration": None
                     }
 
