@@ -93,7 +93,7 @@ python -m procorg.web
 procorg-web
 ```
 
-Then open your browser to `http://localhost:5000`
+Then open your browser to `http://localhost:9777`
 
 ## CLI Commands
 
