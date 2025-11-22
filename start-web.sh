@@ -63,8 +63,20 @@ check_running() {
     return 1  # Not running
 }
 
+# launch browser if on a mac using the open command
+launch_browser() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        open "http://localhost:$1"
+    fi
+    # if linux, try xdg-open
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        xdg-open "http://localhost:$1" 2>/dev/null || echo "Could not open browser automatically. Please navigate to http://localhost:$1"
+    fi
+}
+
 # Check if already running
 if check_running; then
+    launch_browser "$PORT"
     exit 1
 fi
 
@@ -117,5 +129,6 @@ echo "Server started with PID $SERVER_PID"
 echo "Access the web interface at http://localhost:$PORT"
 echo ""
 echo "Server is running in the background."
+launch_browser "$PORT"
 
 cd -
