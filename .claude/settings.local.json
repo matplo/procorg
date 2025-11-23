@@ -29,7 +29,8 @@
       "Bash(procorg stop:*)",
       "Bash(lsof:*)",
       "Bash(ss:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(./venv/bin/procorg list:*)"
     ],
     "deny": [],
     "ask": []

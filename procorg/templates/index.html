@@ -30,9 +30,13 @@
             border-radius: 8px;
             margin-bottom: 20px;
             border-left: 4px solid #007acc;
+        }
+
+        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
 
         .header-left h1 {
@@ -56,34 +60,24 @@
             font-weight: 500;
         }
 
-        .logout-btn {
-            background: #3e3e3e;
-            padding: 8px 16px;
-        }
-
-        .logout-btn:hover {
-            background: #505050;
-        }
-
         .scheduler-info {
-            background: #252526;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding-top: 15px;
+            border-top: 1px solid #3e3e3e;
         }
 
         .scheduler-status {
             display: flex;
             align-items: center;
             gap: 10px;
+            font-size: 14px;
         }
 
         .status-indicator {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #4ec9b0;
         }
@@ -92,95 +86,206 @@
             background: #858585;
         }
 
-        .processes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3e3e3e;
         }
 
-        .process-card {
-            background: #252526;
-            border-radius: 8px;
-            padding: 20px;
-            border-left: 4px solid #007acc;
-            transition: transform 0.2s;
+        .tab {
+            background: none;
+            border: none;
+            color: #858585;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
         }
 
-        .process-card:hover {
-            transform: translateY(-2px);
+        .tab:hover {
+            color: #d4d4d4;
         }
 
-        .process-card.running {
-            border-left-color: #4ec9b0;
+        .tab.active {
+            color: #007acc;
+            border-bottom-color: #007acc;
         }
 
-        .process-card.failed {
-            border-left-color: #f48771;
+        .tab-content {
+            display: none;
         }
 
-        .process-header {
+        .tab-content.active {
+            display: block;
+        }
+
+        .toolbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .toolbar h2 {
+            color: #d4d4d4;
+            font-size: 18px;
+        }
+
+        .process-list {
+            background: #252526;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .process-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #3e3e3e;
+            transition: background 0.2s;
+        }
+
+        .process-item:last-child {
+            border-bottom: none;
+        }
+
+        .process-item:hover {
+            background: #2d2d30;
+        }
+
+        .process-info-col {
+            flex: 1;
         }
 
         .process-name {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 600;
             color: #4ec9b0;
+            margin-bottom: 5px;
         }
 
-        .process-status {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .process-status.running {
-            background: #4ec9b033;
-            color: #4ec9b0;
-        }
-
-        .process-status.idle {
-            background: #85858533;
-            color: #858585;
-        }
-
-        .process-status.failed {
-            background: #f4877133;
-            color: #f48771;
-        }
-
-        .process-status.completed {
-            background: #4ec9b033;
-            color: #4ec9b0;
-        }
-
-        .process-info {
+        .process-description {
             font-size: 13px;
             color: #858585;
-            margin-bottom: 10px;
-        }
-
-        .process-info div {
-            margin-bottom: 5px;
         }
 
         .process-actions {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
+        }
+
+        .running-group {
+            background: #252526;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .group-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2d2d30;
+            border-left: 4px solid #4ec9b0;
+        }
+
+        .group-header:hover {
+            background: #333336;
+        }
+
+        .group-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4ec9b0;
+        }
+
+        .group-subtitle {
+            font-size: 13px;
+            color: #858585;
+            margin-top: 3px;
+        }
+
+        .instance-count {
+            background: #4ec9b0;
+            color: #1e1e1e;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .group-instances {
+            display: none;
+            border-top: 1px solid #3e3e3e;
+        }
+
+        .group-instances.expanded {
+            display: block;
+        }
+
+        .instance-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+        }
+
+        .instance-info {
+            flex: 1;
+        }
+
+        .instance-id {
+            font-size: 13px;
+            color: #007acc;
+            font-family: 'Courier New', monospace;
+        }
+
+        .instance-meta {
+            font-size: 12px;
+            color: #858585;
+            margin-top: 3px;
+        }
+
+        .instance-wrapper {
+            border-bottom: 1px solid #3e3e3e;
+        }
+
+        .instance-wrapper:last-child {
+            border-bottom: none;
+        }
+
+        .logs-accordion {
+            display: none;
+            background: #1e1e1e;
+            padding: 15px 20px;
+            border-top: 1px solid #3e3e3e;
+        }
+
+        .logs-accordion.active {
+            display: block;
+        }
+
+        .logs-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .logs-controls button.active {
+            background: #007acc;
+            color: white;
         }
 
         button {
             background: #007acc;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 24px;
             border-radius: 4px;
             cursor: pointer;
             font-size: 13px;
@@ -213,66 +318,13 @@
             background: #505050;
         }
 
-        .logs-section {
-            background: #252526;
-            border-radius: 8px;
-            padding: 20px;
-            display: none;
-        }
-
-        .logs-section.active {
-            display: block;
-        }
-
-        .logs-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .logs-title {
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .logs-controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .log-content {
-            background: #1e1e1e;
-            border: 1px solid #3e3e3e;
-            border-radius: 4px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            max-height: 500px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .log-content:empty::before {
-            content: 'No logs available';
-            color: #858585;
-            font-style: italic;
-        }
-
-        .refresh-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
+        button.success {
             background: #4ec9b0;
-            margin-left: 10px;
-            animation: pulse 2s infinite;
+            color: #1e1e1e;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        button.success:hover {
+            background: #3da58a;
         }
 
         .modal {
@@ -298,6 +350,8 @@
             padding: 30px;
             max-width: 600px;
             width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
             border-left: 4px solid #007acc;
         }
 
@@ -374,55 +428,104 @@
             font-size: 14px;
         }
 
-        .add-process-btn {
-            background: #4ec9b0;
-            margin-bottom: 20px;
+        .log-content {
+            background: #1e1e1e;
+            border: 1px solid #3e3e3e;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
-        .add-process-btn:hover {
-            background: #3da58a;
+        .log-content:empty::before {
+            content: 'No logs available';
+            color: #858585;
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #858585;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="header-left">
-                <h1>ProcOrg</h1>
-                <div class="subtitle">Process Orchestration and Management</div>
+            <div class="header-top">
+                <div class="header-left">
+                    <h1>ProcOrg</h1>
+                    <div class="subtitle">Process Orchestration and Management</div>
+                </div>
+                <div class="user-info">
+                    <span class="user-name" id="user-name">Loading...</span>
+                    <button class="logout-btn secondary" onclick="logout()">Logout</button>
+                </div>
             </div>
-            <div class="user-info">
-                <span class="user-name" id="user-name">Loading...</span>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+            <div class="scheduler-info">
+                <div class="scheduler-status">
+                    <div class="status-indicator" id="scheduler-indicator"></div>
+                    <span id="scheduler-status">Scheduler: Loading...</span>
+                </div>
+                <button id="scheduler-toggle" class="secondary" onclick="toggleScheduler()">Start Scheduler</button>
             </div>
         </header>
 
-        <div class="scheduler-info">
-            <div class="scheduler-status">
-                <div class="status-indicator" id="scheduler-indicator"></div>
-                <span id="scheduler-status">Scheduler: Loading...</span>
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('launchable')">Launchable Processes</button>
+            <button class="tab" onclick="switchTab('running')">Running Processes</button>
+        </div>
+
+        <!-- Tab 1: Launchable Processes -->
+        <div id="launchable-tab" class="tab-content active">
+            <div class="toolbar">
+                <h2>Launchable Processes</h2>
+                <button class="success" onclick="openRegisterModal()">+ Add Process</button>
             </div>
-            <div>
-                <button id="scheduler-toggle" onclick="toggleScheduler()">Start Scheduler</button>
+            <div class="process-list" id="launchable-list">
+                <!-- Launchable processes will be inserted here -->
             </div>
         </div>
 
-        <button class="add-process-btn" onclick="openRegisterModal()">+ Add Process</button>
-
-        <div class="processes-grid" id="processes-grid">
-            <!-- Process cards will be inserted here -->
+        <!-- Tab 2: Running Processes -->
+        <div id="running-tab" class="tab-content">
+            <div class="toolbar">
+                <h2>Running Processes</h2>
+            </div>
+            <div id="running-list">
+                <!-- Running processes will be inserted here -->
+            </div>
         </div>
 
-        <div class="logs-section" id="logs-section">
-            <div class="logs-header">
-                <div class="logs-title" id="logs-title">Process Logs</div>
-                <div class="logs-controls">
-                    <button class="secondary" onclick="switchStream('stdout')">stdout</button>
-                    <button class="secondary" onclick="switchStream('stderr')">stderr</button>
-                    <button class="secondary" onclick="closeLogs()">Close</button>
-                </div>
+        <!-- Launch Arguments Modal -->
+        <div class="modal" id="launch-modal">
+            <div class="modal-content">
+                <div class="modal-header">Launch Process</div>
+                <div id="launch-message"></div>
+                <form id="launch-form" onsubmit="launchProcess(event)">
+                    <input type="hidden" id="launch-process-name">
+                    <div class="form-group">
+                        <label for="launch-args">Arguments (optional)</label>
+                        <input type="text" id="launch-args" name="args"
+                               placeholder="arg1 arg2 arg3">
+                        <small>Space-separated arguments to pass to the script</small>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="success">Launch</button>
+                        <button type="button" class="secondary" onclick="closeLaunchModal()">Cancel</button>
+                    </div>
+                </form>
             </div>
-            <div class="log-content" id="log-content"></div>
         </div>
 
         <!-- Registration Modal -->
@@ -449,7 +552,7 @@
                         <label for="cron-expr">Cron Expression (optional)</label>
                         <input type="text" id="cron-expr" name="cron_expr"
                                placeholder="e.g., 0 2 * * * (daily at 2 AM)">
-                        <small>Leave empty for manual execution only. Examples: */5 * * * * (every 5 min), 0 9 * * * (daily at 9 AM)</small>
+                        <small>Leave empty for manual execution only</small>
                     </div>
 
                     <div class="form-group">
@@ -469,24 +572,22 @@
 
     <script>
         const socket = io();
-        let currentLogsProcess = null;
-        let currentLogsStream = 'stdout';
-        let logsPollingInterval = null;
+        let currentTab = 'launchable';
+        // Track active log accordions: {execution_id: {name, stream}}
+        const activeLogs = {};
 
-        // Check authentication on page load
+        // Check authentication
         async function checkAuth() {
             try {
                 const response = await fetch('/api/whoami');
                 if (response.ok) {
                     const result = await response.json();
                     if (result.authenticated) {
-                        // Update user info
                         const userInfo = result.user;
                         document.getElementById('user-name').textContent = userInfo.username + (userInfo.is_root ? ' (root)' : '');
                         return true;
                     }
                 }
-                // Not authenticated - redirect to login
                 window.location.href = '/login';
                 return false;
             } catch (error) {
@@ -496,52 +597,310 @@
             }
         }
 
-        // Logout function
         async function logout() {
             try {
                 await fetch('/api/logout', { method: 'POST' });
                 window.location.href = '/login';
             } catch (error) {
                 console.error('Logout failed:', error);
-                // Redirect to login anyway
                 window.location.href = '/login';
             }
         }
 
-        socket.on('connect', () => {
-            console.log('Connected to server');
-        });
+        // Tab switching
+        function switchTab(tabName) {
+            currentTab = tabName;
 
-        socket.on('status_update', (statuses) => {
-            updateProcesses();
-        });
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
 
-        socket.on('log_update', (data) => {
-            if (data.name === currentLogsProcess && data.stream === currentLogsStream) {
-                document.getElementById('log-content').textContent = data.content;
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // Refresh data
+            if (tabName === 'launchable') {
+                updateLaunchableProcesses();
+            } else {
+                updateRunningProcesses();
             }
-        });
+        }
 
-        async function updateProcesses() {
+        // Update launchable processes
+        async function updateLaunchableProcesses() {
             try {
                 const response = await fetch('/api/processes');
-                if (!response.ok) {
-                    console.error('Failed to fetch processes:', response.status, response.statusText);
+                if (!response.ok) return;
+
+                const processes = await response.json();
+                const list = document.getElementById('launchable-list');
+
+                if (processes.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div>No processes registered yet. Click "+ Add Process" to get started.</div></div>';
                     return;
                 }
 
-                const processes = await response.json();
-                console.log('Fetched processes:', processes.length, 'processes');
-
-                const grid = document.getElementById('processes-grid');
-                grid.innerHTML = '';
-
-                processes.forEach(proc => {
-                    const card = createProcessCard(proc);
-                    grid.appendChild(card);
-                });
+                list.innerHTML = processes.map(proc => `
+                    <div class="process-item">
+                        <div class="process-info-col">
+                            <div class="process-name">${proc.name}</div>
+                            <div class="process-description">${proc.description || proc.script_path}</div>
+                        </div>
+                        <div class="process-actions">
+                            <button class="success" onclick="openLaunchModal('${proc.name}')">Launch</button>
+                        </div>
+                    </div>
+                `).join('');
             } catch (error) {
                 console.error('Error fetching processes:', error);
+            }
+        }
+
+        // Track expanded groups by process name
+        const expandedGroups = new Set();
+
+        // Update running processes
+        async function updateRunningProcesses() {
+            try {
+                const response = await fetch('/api/processes/running');
+                if (!response.ok) return;
+
+                const groups = await response.json();
+                const list = document.getElementById('running-list');
+
+                if (groups.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💤</div><div>No processes currently running</div></div>';
+                    return;
+                }
+
+                // Save current expansion state before updating
+                const currentExpandedGroups = new Set();
+                groups.forEach((group, idx) => {
+                    const elem = document.getElementById(`group-${group.name}`);
+                    if (elem && elem.classList.contains('expanded')) {
+                        currentExpandedGroups.add(group.name);
+                    }
+                });
+                // Merge with persistent state
+                currentExpandedGroups.forEach(name => expandedGroups.add(name));
+
+                list.innerHTML = groups.map((group, idx) => `
+                    <div class="running-group">
+                        <div class="group-header" onclick="toggleGroup('${group.name}')">
+                            <div>
+                                <div class="group-title">${group.name}</div>
+                                <div class="group-subtitle">${group.description || group.script_path}</div>
+                            </div>
+                            <div class="instance-count">${group.instances.length} running</div>
+                        </div>
+                        <div class="group-instances ${expandedGroups.has(group.name) ? 'expanded' : ''}" id="group-${group.name}">
+                            ${group.instances.map(inst => `
+                                <div class="instance-wrapper">
+                                    <div class="instance-item">
+                                        <div class="instance-info">
+                                            <div class="instance-id">ID: ${inst.execution_id}</div>
+                                            <div class="instance-meta">
+                                                PID: ${inst.pid} | Started: ${new Date(inst.start_time).toLocaleString()}
+                                                ${inst.args && inst.args.length > 0 ? ` | Args: ${inst.args.join(' ')}` : ''}
+                                            </div>
+                                        </div>
+                                        <div class="process-actions">
+                                            <button class="secondary" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
+                                            <button class="danger" onclick="stopProcess('${group.name}')">Stop</button>
+                                        </div>
+                                    </div>
+                                    <div class="logs-accordion" id="logs-${inst.execution_id}">
+                                        <div class="logs-controls">
+                                            <button class="secondary active" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
+                                            <button class="secondary" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
+                                        </div>
+                                        <div class="log-content" id="log-content-${inst.execution_id}">Loading logs...</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error fetching running processes:', error);
+            }
+        }
+
+        function toggleGroup(name) {
+            const group = document.getElementById(`group-${name}`);
+            group.classList.toggle('expanded');
+
+            // Update persistent state
+            if (group.classList.contains('expanded')) {
+                expandedGroups.add(name);
+            } else {
+                expandedGroups.delete(name);
+            }
+        }
+
+        // Launch modal
+        function openLaunchModal(name) {
+            document.getElementById('launch-process-name').value = name;
+            document.getElementById('launch-args').value = '';
+            document.getElementById('launch-message').innerHTML = '';
+            document.getElementById('launch-modal').classList.add('active');
+        }
+
+        function closeLaunchModal() {
+            document.getElementById('launch-modal').classList.remove('active');
+        }
+
+        async function launchProcess(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('launch-process-name').value;
+            const argsStr = document.getElementById('launch-args').value.trim();
+            const args = argsStr ? argsStr.split(/\s+/) : [];
+
+            const messageDiv = document.getElementById('launch-message');
+
+            try {
+                const response = await fetch(`/api/processes/${name}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ args })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="success-message">Process launched successfully! PID: ${result.execution.pid}</div>`;
+                    setTimeout(() => {
+                        closeLaunchModal();
+                        if (currentTab === 'running') {
+                            updateRunningProcesses();
+                        }
+                    }, 1500);
+                } else {
+                    messageDiv.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function stopProcess(name) {
+            try {
+                const response = await fetch(`/api/processes/${name}/stop`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    updateRunningProcesses();
+                }
+            } catch (error) {
+                console.error('Error stopping process:', error);
+            }
+        }
+
+        // Toggle inline logs accordion
+        function toggleLogs(name, executionId) {
+            const accordion = document.getElementById(`logs-${executionId}`);
+            const isActive = accordion.classList.contains('active');
+
+            if (isActive) {
+                // Close accordion
+                accordion.classList.remove('active');
+                delete activeLogs[executionId];
+            } else {
+                // Open accordion and start loading logs
+                accordion.classList.add('active');
+                activeLogs[executionId] = { name, stream: 'stdout' };
+                loadInlineLogs(name, executionId, 'stdout');
+            }
+        }
+
+        // Switch between stdout and stderr
+        function switchStream(name, executionId, stream) {
+            // Update button states
+            const accordion = document.getElementById(`logs-${executionId}`);
+            const buttons = accordion.querySelectorAll('.logs-controls button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tracking and load logs
+            activeLogs[executionId] = { name, stream };
+            loadInlineLogs(name, executionId, stream);
+        }
+
+        // Load logs for a specific execution
+        async function loadInlineLogs(name, executionId, stream) {
+            try {
+                const response = await fetch(`/api/processes/${name}/logs/${stream}`);
+                const data = await response.json();
+                const contentDiv = document.getElementById(`log-content-${executionId}`);
+                if (contentDiv) {
+                    contentDiv.textContent = data.content || 'No logs available';
+                }
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                const contentDiv = document.getElementById(`log-content-${executionId}`);
+                if (contentDiv) {
+                    contentDiv.textContent = 'Error loading logs';
+                }
+            }
+        }
+
+        // Periodic update of active logs
+        async function updateActiveLogs() {
+            for (const [executionId, info] of Object.entries(activeLogs)) {
+                await loadInlineLogs(info.name, executionId, info.stream);
+            }
+        }
+
+        // Register modal
+        function openRegisterModal() {
+            document.getElementById('register-modal').classList.add('active');
+            document.getElementById('register-form').reset();
+            document.getElementById('register-message').innerHTML = '';
+        }
+
+        function closeRegisterModal() {
+            document.getElementById('register-modal').classList.remove('active');
+        }
+
+        async function registerProcess(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = {
+                name: formData.get('name'),
+                script_path: formData.get('script_path'),
+                cron_expr: formData.get('cron_expr') || null,
+                description: formData.get('description') || ''
+            };
+
+            const messageDiv = document.getElementById('register-message');
+
+            try {
+                const response = await fetch('/api/processes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="success-message">Process "${data.name}" registered successfully!</div>`;
+                    form.reset();
+                    setTimeout(() => {
+                        updateLaunchableProcesses();
+                        closeRegisterModal();
+                    }, 1500);
+                } else {
+                    messageDiv.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
             }
         }
 
@@ -568,152 +927,6 @@
             }
         }
 
-        function createProcessCard(proc) {
-            const card = document.createElement('div');
-            card.className = 'process-card';
-
-            const isRunning = proc.status?.running || false;
-            const latest = proc.status?.latest_execution;
-            const status = latest ? latest.status : 'idle';
-
-            if (isRunning) {
-                card.classList.add('running');
-            } else if (status === 'failed') {
-                card.classList.add('failed');
-            }
-
-            card.innerHTML = `
-                <div class="process-header">
-                    <div class="process-name">${proc.name}</div>
-                    <div class="process-status ${status}">${status}</div>
-                </div>
-                <div class="process-info">
-                    <div><strong>Script:</strong> ${proc.script_path}</div>
-                    ${proc.cron_expr ? `<div><strong>Schedule:</strong> ${proc.cron_expr}</div>` : ''}
-                    ${latest ? `<div><strong>Last run:</strong> ${new Date(latest.start_time).toLocaleString()}</div>` : ''}
-                    ${latest && latest.exit_code !== null ? `<div><strong>Exit code:</strong> ${latest.exit_code}</div>` : ''}
-                    ${proc.description ? `<div><strong>Description:</strong> ${proc.description}</div>` : ''}
-                </div>
-                <div class="process-actions">
-                    <button onclick="runProcess('${proc.name}')" ${isRunning ? 'disabled' : ''}>
-                        ${isRunning ? 'Running...' : 'Run'}
-                    </button>
-                    <button class="danger" onclick="stopProcess('${proc.name}')" ${!isRunning ? 'disabled' : ''}>
-                        Stop
-                    </button>
-                    <button class="secondary" onclick="viewLogs('${proc.name}')">
-                        Logs
-                    </button>
-                    <button class="danger" onclick="deleteProcess('${proc.name}')" ${isRunning ? 'disabled' : ''}>
-                        Delete
-                    </button>
-                </div>
-            `;
-
-            return card;
-        }
-
-        async function runProcess(name) {
-            try {
-                const response = await fetch(`/api/processes/${name}/run`, {
-                    method: 'POST'
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    updateProcesses();
-                } else {
-                    alert('Failed to start process: ' + result.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
-        async function stopProcess(name) {
-            try {
-                const response = await fetch(`/api/processes/${name}/stop`, {
-                    method: 'POST'
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    updateProcesses();
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
-        async function deleteProcess(name) {
-            if (!confirm(`Are you sure you want to delete the process "${name}"?`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/processes/${name}`, {
-                    method: 'DELETE'
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    updateProcesses();
-                } else {
-                    alert('Failed to delete process: ' + result.error);
-                }
-            } catch (error) {
-                alert('Error: ' + error.message);
-            }
-        }
-
-        async function viewLogs(name) {
-            currentLogsProcess = name;
-            currentLogsStream = 'stdout';
-
-            document.getElementById('logs-title').textContent = `Logs: ${name} (${currentLogsStream})`;
-            document.getElementById('logs-section').classList.add('active');
-
-            // Load logs immediately
-            loadLogs();
-
-            // Start polling for log updates every 2 seconds
-            if (logsPollingInterval) {
-                clearInterval(logsPollingInterval);
-            }
-            logsPollingInterval = setInterval(loadLogs, 2000);
-        }
-
-        async function loadLogs() {
-            try {
-                const response = await fetch(`/api/processes/${currentLogsProcess}/logs/${currentLogsStream}`);
-                const data = await response.json();
-
-                document.getElementById('log-content').textContent = data.content;
-            } catch (error) {
-                console.error('Error loading logs:', error);
-            }
-        }
-
-        function switchStream(stream) {
-            currentLogsStream = stream;
-            document.getElementById('logs-title').textContent = `Logs: ${currentLogsProcess} (${stream})`;
-
-            // Load logs for new stream immediately
-            loadLogs();
-            // Polling continues automatically
-        }
-
-        function closeLogs() {
-            currentLogsProcess = null;
-            document.getElementById('logs-section').classList.remove('active');
-
-            // Stop polling when logs are closed
-            if (logsPollingInterval) {
-                clearInterval(logsPollingInterval);
-                logsPollingInterval = null;
-            }
-        }
-
         async function toggleScheduler() {
             try {
                 const response = await fetch('/api/scheduler');
@@ -724,82 +937,48 @@
 
                 updateSchedulerInfo();
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Error toggling scheduler:', error);
             }
         }
 
-        function openRegisterModal() {
-            document.getElementById('register-modal').classList.add('active');
-            document.getElementById('register-form').reset();
-            document.getElementById('register-message').innerHTML = '';
-        }
-
-        function closeRegisterModal() {
-            document.getElementById('register-modal').classList.remove('active');
-            document.getElementById('register-form').reset();
-            document.getElementById('register-message').innerHTML = '';
-        }
-
-        async function registerProcess(event) {
-            event.preventDefault();
-
-            const form = event.target;
-            const formData = new FormData(form);
-            const data = {
-                name: formData.get('name'),
-                script_path: formData.get('script_path'),
-                cron_expr: formData.get('cron_expr') || null,
-                description: formData.get('description') || ''
-            };
-
-            const messageDiv = document.getElementById('register-message');
-
-            try {
-                const response = await fetch('/api/processes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    messageDiv.innerHTML = `<div class="success-message">Process "${data.name}" registered successfully!</div>`;
-                    form.reset();
-
-                    // Refresh the process list
-                    setTimeout(() => {
-                        updateProcesses();
-                        closeRegisterModal();
-                    }, 1500);
-                } else {
-                    messageDiv.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
                 }
-            } catch (error) {
-                messageDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
-            }
-        }
+            });
+        });
 
-        // Close modal when clicking outside
-        document.getElementById('register-modal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeRegisterModal();
+        // Socket.IO connection
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('status_update', () => {
+            if (currentTab === 'launchable') {
+                updateLaunchableProcesses();
+            } else {
+                updateRunningProcesses();
             }
         });
 
-        // Initial load and periodic updates
+        // Initial load
         window.addEventListener('load', async () => {
-            // Check authentication first
             const authenticated = await checkAuth();
             if (authenticated) {
-                // Only load processes if authenticated
-                updateProcesses();
+                updateLaunchableProcesses();
                 updateSchedulerInfo();
 
-                // Poll for updates every 2 seconds
-                setInterval(updateProcesses, 2000);
+                // Poll for updates
+                setInterval(() => {
+                    if (currentTab === 'launchable') {
+                        updateLaunchableProcesses();
+                    } else {
+                        updateRunningProcesses();
+                        updateActiveLogs();
+                    }
+                }, 2000);
                 setInterval(updateSchedulerInfo, 5000);
             }
         });

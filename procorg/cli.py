@@ -70,14 +70,21 @@ def list():
 
 @cli.command()
 @click.argument('name')
-def run(name):
-    """Manually run a process."""
-    click.echo(f"Starting process '{name}'...")
-    execution = manager.run_process(name)
+@click.argument('args', nargs=-1, required=False)
+def run(name, args):
+    """Manually run a process with optional arguments."""
+    if args:
+        click.echo(f"Starting process '{name}' with args: {' '.join(args)}")
+    else:
+        click.echo(f"Starting process '{name}'...")
+
+    execution = manager.run_process(name, args=list(args) if args else None)
 
     if execution:
         click.echo(f"Process started with PID {execution.pid}")
         click.echo(f"Execution ID: {execution.execution_id}")
+        if args:
+            click.echo(f"Arguments: {' '.join(args)}")
     else:
         click.echo(f"Failed to start process '{name}'", err=True)
         sys.exit(1)

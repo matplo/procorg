@@ -30,11 +30,12 @@ def demote(uid: int, gid: int):
 class ProcessExecution:
     """Represents a single execution of a process."""
 
-    def __init__(self, name: str, script_path: str, storage: Storage, uid: Optional[int] = None):
+    def __init__(self, name: str, script_path: str, storage: Storage, uid: Optional[int] = None, args: Optional[List[str]] = None):
         self.name = name
         self.script_path = script_path
         self.storage = storage
         self.uid = uid if uid is not None else os.getuid()
+        self.args = args or []
         self.execution_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
         self.process: Optional[subprocess.Popen] = None
         self.pid: Optional[int] = None
@@ -64,8 +65,11 @@ class ProcessExecution:
                 except KeyError:
                     print(f"Warning: Could not find user info for uid {self.uid}, running as current user")
 
+            # Build command with optional arguments
+            cmd = ['/bin/bash', self.script_path] + self.args
+
             self.process = subprocess.Popen(
-                ['/bin/bash', self.script_path],
+                cmd,
                 stdout=stdout_file,
                 stderr=stderr_file,
                 cwd=os.path.dirname(self.script_path) or '.',
@@ -160,6 +164,7 @@ class ProcessExecution:
             "name": self.name,
             "pid": self.pid,
             "status": self.status,
+            "args": self.args,
             "start_time": self.start_time.isoformat() if self.start_time else None,
             "end_time": self.end_time.isoformat() if self.end_time else None,
             "exit_code": self.exit_code,
@@ -176,7 +181,7 @@ class ProcessManager:
         self.executions: Dict[str, List[ProcessExecution]] = {}
         self.lock = threading.Lock()
 
-    def run_process(self, name: str) -> Optional[ProcessExecution]:
+    def run_process(self, name: str, args: Optional[List[str]] = None) -> Optional[ProcessExecution]:
         """Execute a registered process."""
         process_def = self.storage.get_process(name)
 
@@ -194,7 +199,7 @@ class ProcessManager:
             print(f"Script not found: {script_path}")
             return None
 
-        execution = ProcessExecution(name, script_path, self.storage, uid=self.uid)
+        execution = ProcessExecution(name, script_path, self.storage, uid=self.uid, args=args)
 
         with self.lock:
             if name not in self.executions:

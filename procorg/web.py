@@ -137,7 +137,9 @@ def get_process(name):
         return jsonify({'error': 'Process not found'}), 404
 
     # Verify ownership (non-root can only see their own)
-    if not user.is_root and proc.get('owner_uid') != user.uid:
+    # Check ownership: processes without owner_uid are treated as belonging to current user (backward compatibility)
+    proc_owner = proc.get('owner_uid')
+    if not user.is_root and proc_owner is not None and proc_owner != user.uid:
         return jsonify({'error': 'Permission denied'}), 403
 
     status = manager.get_process_status(name)
@@ -192,7 +194,9 @@ def unregister_process(name):
     if not proc:
         return jsonify({'success': False, 'error': 'Process not found'}), 404
 
-    if not user.is_root and proc.get('owner_uid') != user.uid:
+    # Check ownership: processes without owner_uid are treated as belonging to current user (backward compatibility)
+    proc_owner = proc.get('owner_uid')
+    if not user.is_root and proc_owner is not None and proc_owner != user.uid:
         return jsonify({'error': 'Permission denied'}), 403
 
     success = storage.unregister_process(name)
@@ -211,15 +215,21 @@ def run_process(name):
     storage = Storage(uid=user.uid)
     manager = ProcessManager(storage, uid=user.uid)
 
+    # Get optional args from request
+    data = request.get_json() or {}
+    args = data.get('args', [])
+
     # Verify ownership
     proc = storage.get_process(name)
     if not proc:
         return jsonify({'success': False, 'error': 'Process not found'}), 404
 
-    if not user.is_root and proc.get('owner_uid') != user.uid:
+    # Check ownership: processes without owner_uid are treated as belonging to current user (backward compatibility)
+    proc_owner = proc.get('owner_uid')
+    if not user.is_root and proc_owner is not None and proc_owner != user.uid:
         return jsonify({'error': 'Permission denied'}), 403
 
-    execution = manager.run_process(name)
+    execution = manager.run_process(name, args=args)
 
     if execution:
         return jsonify({
@@ -228,6 +238,87 @@ def run_process(name):
         })
     else:
         return jsonify({'success': False, 'error': 'Failed to start process'}), 500
+
+
+@app.route('/api/processes/running')
+@require_auth
+def get_running_processes():
+    """Get all running processes grouped by name."""
+    user = get_current_user()
+    storage = Storage(uid=user.uid)
+    manager = ProcessManager(storage, uid=user.uid)
+
+    # Get all processes
+    if user.is_root:
+        processes = storage.list_all_processes()
+    else:
+        processes = storage.list_processes()
+
+    # Build grouped running processes
+    running_groups = []
+    for proc in processes:
+        name = proc['name']
+
+        # Get all running executions for this process from in-memory
+        running_execs = []
+        with manager.lock:
+            if name in manager.executions:
+                for execution in manager.executions[name]:
+                    if execution.status == "running":
+                        running_execs.append(execution.get_info())
+
+        # Also check filesystem for ALL running executions started by other requests
+        exec_dir = storage.logs_dir / name
+        if exec_dir.exists():
+            # Find all PID files for this process
+            pid_files = list(exec_dir.glob("*.pid"))
+            for pid_file in pid_files:
+                # Extract execution_id from filename (e.g., "20231121_143025_123456.pid")
+                execution_id = pid_file.stem
+
+                # Check if already in running_execs from in-memory
+                if any(e['execution_id'] == execution_id for e in running_execs):
+                    continue
+
+                try:
+                    with open(pid_file, 'r') as f:
+                        pid = int(f.read().strip())
+
+                    # Check if process is still running
+                    try:
+                        os.kill(pid, 0)
+                        # Process exists, parse execution info from filesystem
+                        date_part = execution_id.split('_')[0]
+                        time_part = execution_id.split('_')[1]
+                        start_time_str = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]} {time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+                        from datetime import datetime
+                        start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+
+                        running_execs.append({
+                            "execution_id": execution_id,
+                            "name": name,
+                            "pid": pid,
+                            "status": "running",
+                            "args": [],
+                            "start_time": start_time,
+                            "end_time": None,
+                            "exit_code": None,
+                            "duration": None
+                        })
+                    except OSError:
+                        pass  # Process not running
+                except (ValueError, FileNotFoundError):
+                    pass
+
+        if running_execs:
+            running_groups.append({
+                'name': name,
+                'description': proc.get('description', ''),
+                'script_path': proc['script_path'],
+                'instances': running_execs
+            })
+
+    return jsonify(running_groups)
 
 
 @app.route('/api/processes/<name>/stop', methods=['POST'])
@@ -243,7 +334,9 @@ def stop_process(name):
     if not proc:
         return jsonify({'success': False, 'error': 'Process not found'}), 404
 
-    if not user.is_root and proc.get('owner_uid') != user.uid:
+    # Check ownership: processes without owner_uid are treated as belonging to current user (backward compatibility)
+    proc_owner = proc.get('owner_uid')
+    if not user.is_root and proc_owner is not None and proc_owner != user.uid:
         return jsonify({'error': 'Permission denied'}), 403
 
     success = manager.stop_process(name)
@@ -264,7 +357,9 @@ def get_logs(name, stream):
     if not proc:
         return jsonify({'error': 'Process not found'}), 404
 
-    if not user.is_root and proc.get('owner_uid') != user.uid:
+    # Check ownership: processes without owner_uid are treated as belonging to current user (backward compatibility)
+    proc_owner = proc.get('owner_uid')
+    if not user.is_root and proc_owner is not None and proc_owner != user.uid:
         return jsonify({'error': 'Permission denied'}), 403
 
     lines = request.args.get('lines', 100, type=int)
