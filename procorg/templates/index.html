@@ -260,12 +260,17 @@
         }
 
         // Tab switching
-        function switchTab(tabName) {
+        function switchTab(tabName, event) {
             currentTab = tabName;
 
             // Update tab buttons
-            document.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(tab => {
+                tab.classList.remove('active');
+                // Match the tab button by the onclick attribute containing the tabName
+                if (tab.getAttribute('onclick')?.includes(`'${tabName}'`)) {
+                    tab.classList.add('active');
+                }
+            });
 
             // Update tab content
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -337,6 +342,9 @@
                 // Merge with persistent state
                 currentExpandedGroups.forEach(name => expandedGroups.add(name));
 
+                // Save page scroll position
+                const savedPageScroll = window.scrollY || document.documentElement.scrollTop;
+
                 // Save log content and scroll position before regenerating HTML
                 const savedLogContent = {};
                 const savedScrollPositions = {};
@@ -403,6 +411,9 @@
                         }
                     }
                 });
+
+                // Restore page scroll position
+                window.scrollTo(0, savedPageScroll);
             } catch (error) {
                 console.error('Error fetching running processes:', error);
             }
@@ -445,6 +456,9 @@
                 // Merge with persistent state
                 currentExpandedGroups.forEach(name => expandedGroups.add(name));
 
+                // Save page scroll position
+                const savedPageScroll = window.scrollY || document.documentElement.scrollTop;
+
                 // Save log content and scroll position before regenerating
                 const savedLogContent = {};
                 const savedScrollPositions = {};
@@ -480,7 +494,12 @@
                                                     Status: ${inst.status} | Exit code: ${inst.exit_code !== null ? inst.exit_code : 'N/A'} | Started: ${new Date(inst.start_time).toLocaleString()}
                                                 </div>
                                             </div>
-                                            <button class="btn btn-secondary btn-sm" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-success" onclick="restartProcess('${group.name}')">
+                                                    <i class="bi bi-arrow-clockwise"></i> Restart
+                                                </button>
+                                                <button class="btn btn-secondary" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
+                                            </div>
                                         </div>
                                         <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
                                             <div class="btn-group mb-3" role="group">
@@ -507,6 +526,9 @@
                         }
                     }
                 });
+
+                // Restore page scroll position
+                window.scrollTo(0, savedPageScroll);
             } catch (error) {
                 console.error('Error fetching stopped processes:', error);
             }
@@ -590,6 +612,30 @@
                 }
             } catch (error) {
                 messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Restart a stopped process
+        async function restartProcess(name) {
+            try {
+                const response = await fetch(`/api/processes/${name}/run`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ args: [] })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(`Process "${name}" restarted successfully! PID: ${result.execution.pid}`);
+                    // Switch to running tab to see the restarted process
+                    switchTab('running');
+                } else {
+                    alert(`Failed to restart process: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error restarting process:', error);
+                alert(`Error restarting process: ${error.message}`);
             }
         }
 
@@ -803,19 +849,6 @@
             if (authenticated) {
                 updateLaunchableProcesses();
                 updateSchedulerInfo();
-
-                // Poll for updates
-                setInterval(() => {
-                    if (currentTab === 'launchable') {
-                        updateLaunchableProcesses();
-                    } else if (currentTab === 'running') {
-                        updateRunningProcesses();
-                    } else if (currentTab === 'stopped') {
-                        updateStoppedProcesses();
-                    }
-                }, 2000);
-
-                setInterval(updateSchedulerInfo, 5000);
             }
         });
     </script>
