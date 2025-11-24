@@ -484,6 +484,7 @@
         <div class="tabs">
             <button class="tab active" onclick="switchTab('launchable')">Launchable Processes</button>
             <button class="tab" onclick="switchTab('running')">Running Processes</button>
+            <button class="tab" onclick="switchTab('stopped')">Stopped Processes</button>
         </div>
 
         <!-- Tab 1: Launchable Processes -->
@@ -504,6 +505,17 @@
             </div>
             <div id="running-list">
                 <!-- Running processes will be inserted here -->
+            </div>
+        </div>
+
+        <!-- Tab 3: Stopped Processes -->
+        <div id="stopped-tab" class="tab-content">
+            <div class="toolbar">
+                <h2>Stopped Processes</h2>
+                <button class="danger" onclick="clearStoppedProcesses()">Clear List</button>
+            </div>
+            <div id="stopped-list">
+                <!-- Stopped processes will be inserted here -->
             </div>
         </div>
 
@@ -622,8 +634,10 @@
             // Refresh data
             if (tabName === 'launchable') {
                 updateLaunchableProcesses();
-            } else {
+            } else if (tabName === 'running') {
                 updateRunningProcesses();
+            } else if (tabName === 'stopped') {
+                updateStoppedProcesses();
             }
         }
 
@@ -756,6 +770,114 @@
                 expandedGroups.add(name);
             } else {
                 expandedGroups.delete(name);
+            }
+        }
+
+        // Update stopped processes
+        async function updateStoppedProcesses() {
+            try {
+                const response = await fetch('/api/processes/stopped');
+                if (!response.ok) return;
+
+                const groups = await response.json();
+                const list = document.getElementById('stopped-list');
+
+                if (groups.length === 0) {
+                    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✓</div><div>No stopped processes</div></div>';
+                    return;
+                }
+
+                // Save current expansion state before updating
+                const currentExpandedGroups = new Set();
+                groups.forEach((group, idx) => {
+                    const elem = document.getElementById(`group-stopped-${group.name}`);
+                    if (elem && elem.classList.contains('expanded')) {
+                        currentExpandedGroups.add(`stopped-${group.name}`);
+                    }
+                });
+                // Merge with persistent state
+                currentExpandedGroups.forEach(name => expandedGroups.add(name));
+
+                // Save log content before regenerating
+                const savedLogContent = {};
+                groups.forEach(group => {
+                    group.instances.forEach(inst => {
+                        const logDiv = document.getElementById(`log-content-${inst.execution_id}`);
+                        if (logDiv) {
+                            savedLogContent[inst.execution_id] = logDiv.textContent;
+                        }
+                    });
+                });
+
+                list.innerHTML = groups.map((group, idx) => `
+                    <div class="running-group">
+                        <div class="group-header" onclick="toggleGroup('stopped-${group.name}')">
+                            <div>
+                                <div class="group-title">${group.name}</div>
+                                <div class="group-subtitle">${group.description || group.script_path}</div>
+                            </div>
+                            <div class="instance-count">${group.instances.length} stopped</div>
+                        </div>
+                        <div class="group-instances ${expandedGroups.has('stopped-' + group.name) ? 'expanded' : ''}" id="group-stopped-${group.name}">
+                            ${group.instances.map(inst => `
+                                <div class="instance-wrapper">
+                                    <div class="instance-item">
+                                        <div class="instance-info">
+                                            <div class="instance-id">ID: ${inst.execution_id}</div>
+                                            <div class="instance-meta">
+                                                Status: ${inst.status} | Exit code: ${inst.exit_code !== null ? inst.exit_code : 'N/A'} | Started: ${new Date(inst.start_time).toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <div class="process-actions">
+                                            <button class="secondary" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
+                                        </div>
+                                    </div>
+                                    <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
+                                        <div class="logs-controls">
+                                            <button class="secondary ${!activeLogs[inst.execution_id] || activeLogs[inst.execution_id].stream === 'stdout' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
+                                            <button class="secondary ${activeLogs[inst.execution_id]?.stream === 'stderr' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
+                                            <button class="secondary" onclick="refreshLogs('${group.name}', '${inst.execution_id}')">↻ Refresh</button>
+                                        </div>
+                                        <div class="log-content" id="log-content-${inst.execution_id}"></div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+
+                // Restore saved log content
+                Object.keys(savedLogContent).forEach(executionId => {
+                    const logDiv = document.getElementById(`log-content-${executionId}`);
+                    if (logDiv && savedLogContent[executionId]) {
+                        logDiv.textContent = savedLogContent[executionId];
+                    }
+                });
+            } catch (error) {
+                console.error('Error fetching stopped processes:', error);
+            }
+        }
+
+        // Clear stopped processes
+        async function clearStoppedProcesses() {
+            if (!confirm('Are you sure you want to delete all stopped process logs? This cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/processes/stopped/clear', {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    updateStoppedProcesses();
+                } else {
+                    alert('Failed to clear stopped processes');
+                }
+            } catch (error) {
+                console.error('Error clearing stopped processes:', error);
+                alert('Error clearing stopped processes');
             }
         }
 
@@ -995,8 +1117,10 @@
                 setInterval(() => {
                     if (currentTab === 'launchable') {
                         updateLaunchableProcesses();
-                    } else {
+                    } else if (currentTab === 'running') {
                         updateRunningProcesses();
+                    } else if (currentTab === 'stopped') {
+                        updateStoppedProcesses();
                     }
                 }, 2000);
 

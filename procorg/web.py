@@ -321,6 +321,121 @@ def get_running_processes():
     return jsonify(running_groups)
 
 
+@app.route('/api/processes/stopped')
+@require_auth
+def get_stopped_processes():
+    """Get all stopped processes with available logs."""
+    user = get_current_user()
+    storage = Storage(uid=user.uid)
+
+    # Get all processes
+    if user.is_root:
+        processes = storage.list_all_processes()
+    else:
+        processes = storage.list_processes()
+
+    stopped_groups = []
+    for proc in processes:
+        name = proc['name']
+        exec_dir = storage.logs_dir / name
+
+        if not exec_dir.exists():
+            continue
+
+        # Find all executions with logs
+        log_files = list(exec_dir.glob("*.stdout.log"))
+        stopped_execs = []
+
+        for log_file in log_files:
+            execution_id = log_file.stem.replace('.stdout', '')
+            pid_file = exec_dir / f"{execution_id}.pid"
+
+            # Only include if not currently running (no PID file)
+            if not pid_file.exists():
+                # Parse start time from execution_id
+                try:
+                    date_part = execution_id.split('_')[0]
+                    time_part = execution_id.split('_')[1]
+                    start_time_str = f"{date_part[:4]}-{date_part[4:6]}-{date_part[6:8]} {time_part[:2]}:{time_part[2:4]}:{time_part[4:6]}"
+                    from datetime import datetime
+                    start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
+                except (IndexError, ValueError):
+                    start_time = None
+
+                # Read exit code
+                exit_code = None
+                exitcode_file = exec_dir / f"{execution_id}.exitcode"
+                if exitcode_file.exists():
+                    try:
+                        with open(exitcode_file, 'r') as f:
+                            exit_code = int(f.read().strip())
+                    except (ValueError, FileNotFoundError):
+                        pass
+
+                stopped_execs.append({
+                    "execution_id": execution_id,
+                    "name": name,
+                    "start_time": start_time,
+                    "exit_code": exit_code,
+                    "status": "completed" if exit_code == 0 else "failed" if exit_code else "stopped"
+                })
+
+        if stopped_execs:
+            # Sort by start time (newest first)
+            stopped_execs.sort(key=lambda x: x['start_time'] or '', reverse=True)
+            stopped_groups.append({
+                'name': name,
+                'description': proc.get('description', ''),
+                'script_path': proc['script_path'],
+                'instances': stopped_execs
+            })
+
+    return jsonify(stopped_groups)
+
+
+@app.route('/api/processes/stopped/clear', methods=['POST'])
+@require_auth
+def clear_stopped_processes():
+    """Clear all stopped process logs."""
+    user = get_current_user()
+    storage = Storage(uid=user.uid)
+
+    # Get all processes
+    if user.is_root:
+        processes = storage.list_all_processes()
+    else:
+        processes = storage.list_processes()
+
+    deleted_count = 0
+    for proc in processes:
+        name = proc['name']
+        exec_dir = storage.logs_dir / name
+
+        if not exec_dir.exists():
+            continue
+
+        # Find all executions with logs (that aren't running)
+        log_files = list(exec_dir.glob("*.stdout.log"))
+
+        for log_file in log_files:
+            execution_id = log_file.stem.replace('.stdout', '')
+            pid_file = exec_dir / f"{execution_id}.pid"
+
+            # Only delete if not currently running
+            if not pid_file.exists():
+                # Delete all related files for this execution
+                for ext in ['.stdout.log', '.stderr.log', '.exitcode']:
+                    file_path = exec_dir / f"{execution_id}{ext}"
+                    if file_path.exists():
+                        try:
+                            file_path.unlink()
+                            deleted_count += 1
+                        except Exception as e:
+                            print(f"Error deleting {file_path}: {e}")
+
+    return jsonify({'success': True, 'deleted_files': deleted_count})
+
+
 @app.route('/api/processes/<name>/stop', methods=['POST'])
 @require_auth
 def stop_process(name):
