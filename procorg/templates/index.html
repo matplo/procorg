@@ -8,6 +8,24 @@
     <link rel="stylesheet" href="/static/css/bootstrap-icons.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
+        /* Override Bootstrap primary color to match nav-link blue */
+        :root {
+            --bs-primary: #6ea8fe;
+            --bs-primary-rgb: 110, 168, 254;
+        }
+        .btn-primary {
+            --bs-btn-bg: #6ea8fe;
+            --bs-btn-border-color: #6ea8fe;
+            --bs-btn-hover-bg: #5a96f0;
+            --bs-btn-hover-border-color: #5a96f0;
+        }
+        .text-primary {
+            color: #6ea8fe !important;
+        }
+        .border-primary {
+            border-color: #6ea8fe !important;
+        }
+
         /* Minimal custom styles only for specific functionality */
         .tab-content {
             display: none;
@@ -58,7 +76,7 @@
 <body>
     <div class="container-fluid px-4 py-3">
         <!-- Header Card -->
-        <div class="card mb-4 border-start border-primary border-4">
+        <div class="card mb-4">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
@@ -609,8 +627,25 @@
 
         // Switch between stdout and stderr
         function switchStream(name, executionId, stream) {
-            // Update tracking and load logs
+            // Update tracking
             activeLogs[executionId] = { name, stream };
+
+            // Immediately update button styles for instant visual feedback
+            const accordion = document.getElementById(`logs-${executionId}`);
+            if (accordion) {
+                const buttons = accordion.querySelectorAll('.btn-group button');
+                buttons.forEach(btn => {
+                    if (btn.textContent.includes(stream)) {
+                        btn.classList.remove('btn-secondary');
+                        btn.classList.add('btn-primary');
+                    } else if (btn.textContent.includes('stdout') || btn.textContent.includes('stderr')) {
+                        btn.classList.remove('btn-primary');
+                        btn.classList.add('btn-secondary');
+                    }
+                });
+            }
+
+            // Load logs
             loadInlineLogs(name, executionId, stream);
         }
 
