@@ -1,437 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProcOrg - Process Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1e1e1e;
-            color: #d4d4d4;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        header {
-            background: #252526;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #007acc;
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .header-left h1 {
-            color: #007acc;
-            margin-bottom: 5px;
-        }
-
-        .header-left .subtitle {
-            color: #858585;
-            font-size: 14px;
-        }
-
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .user-name {
-            color: #4ec9b0;
-            font-weight: 500;
-        }
-
-        .scheduler-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 15px;
-            border-top: 1px solid #3e3e3e;
-        }
-
-        .scheduler-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
-
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #4ec9b0;
-        }
-
-        .status-indicator.stopped {
-            background: #858585;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #3e3e3e;
-        }
-
-        .tab {
-            background: none;
-            border: none;
-            color: #858585;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.2s;
-        }
-
-        .tab:hover {
-            color: #d4d4d4;
-        }
-
-        .tab.active {
-            color: #007acc;
-            border-bottom-color: #007acc;
-        }
-
+        /* Minimal custom styles only for specific functionality */
         .tab-content {
             display: none;
         }
-
         .tab-content.active {
             display: block;
         }
-
-        .toolbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .toolbar h2 {
-            color: #d4d4d4;
-            font-size: 18px;
-        }
-
-        .process-list {
-            background: #252526;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .process-item {
-            display: flex;
-            align-items: center;
-            padding: 15px 20px;
-            border-bottom: 1px solid #3e3e3e;
-            transition: background 0.2s;
-        }
-
-        .process-item:last-child {
-            border-bottom: none;
-        }
-
-        .process-item:hover {
-            background: #2d2d30;
-        }
-
-        .process-info-col {
-            flex: 1;
-        }
-
-        .process-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: #4ec9b0;
-            margin-bottom: 5px;
-        }
-
-        .process-description {
-            font-size: 13px;
-            color: #858585;
-        }
-
-        .process-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .running-group {
-            background: #252526;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            overflow: hidden;
-        }
-
-        .group-header {
-            padding: 15px 20px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #2d2d30;
-            border-left: 4px solid #4ec9b0;
-        }
-
-        .group-header:hover {
-            background: #333336;
-        }
-
-        .group-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #4ec9b0;
-        }
-
-        .group-subtitle {
-            font-size: 13px;
-            color: #858585;
-            margin-top: 3px;
-        }
-
-        .instance-count {
-            background: #4ec9b0;
-            color: #1e1e1e;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
         .group-instances {
             display: none;
-            border-top: 1px solid #3e3e3e;
         }
-
         .group-instances.expanded {
             display: block;
         }
-
-        .instance-item {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-        }
-
-        .instance-info {
-            flex: 1;
-        }
-
-        .instance-id {
-            font-size: 13px;
-            color: #007acc;
-            font-family: 'Courier New', monospace;
-        }
-
-        .instance-meta {
-            font-size: 12px;
-            color: #858585;
-            margin-top: 3px;
-        }
-
-        .instance-wrapper {
-            border-bottom: 1px solid #3e3e3e;
-        }
-
-        .instance-wrapper:last-child {
-            border-bottom: none;
-        }
-
         .logs-accordion {
             display: none;
-            background: #1e1e1e;
-            padding: 15px 20px;
-            border-top: 1px solid #3e3e3e;
         }
-
         .logs-accordion.active {
             display: block;
         }
-
-        .logs-controls {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .logs-controls button.active {
-            background: #007acc;
-            color: white;
-        }
-
-        button {
-            background: #007acc;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background: #005a9e;
-        }
-
-        button:disabled {
-            background: #3e3e3e;
-            color: #858585;
-            cursor: not-allowed;
-        }
-
-        button.danger {
-            background: #f48771;
-        }
-
-        button.danger:hover {
-            background: #d16969;
-        }
-
-        button.secondary {
-            background: #3e3e3e;
-        }
-
-        button.secondary:hover {
-            background: #505050;
-        }
-
-        button.success {
-            background: #4ec9b0;
-            color: #1e1e1e;
-        }
-
-        button.success:hover {
-            background: #3da58a;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: #252526;
-            border-radius: 8px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            border-left: 4px solid #007acc;
-        }
-
-        .modal-header {
-            font-size: 20px;
-            font-weight: bold;
-            color: #007acc;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #d4d4d4;
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px;
-            background: #1e1e1e;
-            border: 1px solid #3e3e3e;
-            border-radius: 4px;
-            color: #d4d4d4;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #007acc;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: 5px;
-            color: #858585;
-            font-size: 12px;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 25px;
-        }
-
-        .error-message {
-            background: #f4877133;
-            color: #f48771;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        .success-message {
-            background: #4ec9b033;
-            color: #4ec9b0;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
         .log-content {
             background: #1e1e1e;
-            border: 1px solid #3e3e3e;
-            border-radius: 4px;
             padding: 15px;
             font-family: 'Courier New', monospace;
             font-size: 12px;
@@ -439,69 +36,80 @@
             overflow-y: auto;
             white-space: pre-wrap;
             word-wrap: break-word;
+            border-radius: 0.375rem;
         }
-
         .log-content:empty::before {
             content: 'No logs available';
-            color: #858585;
+            color: #6c757d;
             font-style: italic;
         }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #858585;
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #198754;
+            display: inline-block;
         }
-
-        .empty-state-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
+        .status-indicator.stopped {
+            background: #6c757d;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="header-top">
-                <div class="header-left">
-                    <h1>ProcOrg</h1>
-                    <div class="subtitle">Process Orchestration and Management</div>
+    <div class="container-fluid px-4 py-3">
+        <!-- Header Card -->
+        <div class="card mb-4 border-start border-primary border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h1 class="h3 text-primary mb-1">ProcOrg</h1>
+                        <p class="text-muted small mb-0">Process Orchestration and Management</p>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="text-success fw-semibold" id="user-name">Loading...</span>
+                        <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+                    </div>
                 </div>
-                <div class="user-info">
-                    <span class="user-name" id="user-name">Loading...</span>
-                    <button class="logout-btn secondary" onclick="logout()">Logout</button>
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="status-indicator" id="scheduler-indicator"></div>
+                        <span class="small" id="scheduler-status">Scheduler: Loading...</span>
+                    </div>
+                    <button id="scheduler-toggle" class="btn btn-secondary btn-sm" onclick="toggleScheduler()">Start Scheduler</button>
                 </div>
             </div>
-            <div class="scheduler-info">
-                <div class="scheduler-status">
-                    <div class="status-indicator" id="scheduler-indicator"></div>
-                    <span id="scheduler-status">Scheduler: Loading...</span>
-                </div>
-                <button id="scheduler-toggle" class="secondary" onclick="toggleScheduler()">Start Scheduler</button>
-            </div>
-        </header>
-
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('launchable')">Launchable Processes</button>
-            <button class="tab" onclick="switchTab('running')">Running Processes</button>
-            <button class="tab" onclick="switchTab('stopped')">Stopped Processes</button>
         </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" onclick="switchTab('launchable')">Launchable Processes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" onclick="switchTab('running')">Running Processes</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" onclick="switchTab('stopped')">Stopped Processes</button>
+            </li>
+        </ul>
 
         <!-- Tab 1: Launchable Processes -->
         <div id="launchable-tab" class="tab-content active">
-            <div class="toolbar">
-                <h2>Launchable Processes</h2>
-                <button class="success" onclick="openRegisterModal()">+ Add Process</button>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Launchable Processes</h2>
+                <button class="btn btn-success" onclick="openRegisterModal()">
+                    <i class="bi bi-plus-lg"></i> Add Process
+                </button>
             </div>
-            <div class="process-list" id="launchable-list">
+            <div class="list-group" id="launchable-list">
                 <!-- Launchable processes will be inserted here -->
             </div>
         </div>
 
         <!-- Tab 2: Running Processes -->
         <div id="running-tab" class="tab-content">
-            <div class="toolbar">
-                <h2>Running Processes</h2>
+            <div class="mb-3">
+                <h2 class="h5 mb-0">Running Processes</h2>
             </div>
             <div id="running-list">
                 <!-- Running processes will be inserted here -->
@@ -510,9 +118,9 @@
 
         <!-- Tab 3: Stopped Processes -->
         <div id="stopped-tab" class="tab-content">
-            <div class="toolbar">
-                <h2>Stopped Processes</h2>
-                <button class="danger" onclick="clearStoppedProcesses()">Clear List</button>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h5 mb-0">Stopped Processes</h2>
+                <button class="btn btn-danger" onclick="clearStoppedProcesses()">Clear List</button>
             </div>
             <div id="stopped-list">
                 <!-- Stopped processes will be inserted here -->
@@ -520,64 +128,78 @@
         </div>
 
         <!-- Launch Arguments Modal -->
-        <div class="modal" id="launch-modal">
-            <div class="modal-content">
-                <div class="modal-header">Launch Process</div>
-                <div id="launch-message"></div>
-                <form id="launch-form" onsubmit="launchProcess(event)">
-                    <input type="hidden" id="launch-process-name">
-                    <div class="form-group">
-                        <label for="launch-args">Arguments (optional)</label>
-                        <input type="text" id="launch-args" name="args"
-                               placeholder="arg1 arg2 arg3">
-                        <small>Space-separated arguments to pass to the script</small>
+        <div class="modal" id="launch-modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Launch Process</h5>
+                        <button type="button" class="btn-close" onclick="closeLaunchModal()"></button>
                     </div>
-                    <div class="form-actions">
-                        <button type="submit" class="success">Launch</button>
-                        <button type="button" class="secondary" onclick="closeLaunchModal()">Cancel</button>
+                    <div class="modal-body">
+                        <div id="launch-message"></div>
+                        <form id="launch-form" onsubmit="launchProcess(event)">
+                            <input type="hidden" id="launch-process-name">
+                            <div class="mb-3">
+                                <label for="launch-args" class="form-label">Arguments (optional)</label>
+                                <input type="text" class="form-control" id="launch-args" name="args"
+                                       placeholder="arg1 arg2 arg3">
+                                <div class="form-text">Space-separated arguments to pass to the script</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success">Launch</button>
+                                <button type="button" class="btn btn-secondary" onclick="closeLaunchModal()">Cancel</button>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
         <!-- Registration Modal -->
-        <div class="modal" id="register-modal">
-            <div class="modal-content">
-                <div class="modal-header">Register New Process</div>
-                <div id="register-message"></div>
-                <form id="register-form" onsubmit="registerProcess(event)">
-                    <div class="form-group">
-                        <label for="process-name">Process Name *</label>
-                        <input type="text" id="process-name" name="name" required
-                               placeholder="e.g., my-backup-script">
-                        <small>Unique identifier for the process (no spaces)</small>
+        <div class="modal" id="register-modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Register New Process</h5>
+                        <button type="button" class="btn-close" onclick="closeRegisterModal()"></button>
                     </div>
+                    <div class="modal-body">
+                        <div id="register-message"></div>
+                        <form id="register-form" onsubmit="registerProcess(event)">
+                            <div class="mb-3">
+                                <label for="process-name" class="form-label">Process Name *</label>
+                                <input type="text" class="form-control" id="process-name" name="name" required
+                                       placeholder="e.g., my-backup-script">
+                                <div class="form-text">Unique identifier for the process (no spaces)</div>
+                            </div>
 
-                    <div class="form-group">
-                        <label for="script-path">Script Path *</label>
-                        <input type="text" id="script-path" name="script_path" required
-                               placeholder="e.g., /path/to/script.sh">
-                        <small>Absolute path to the shell script</small>
-                    </div>
+                            <div class="mb-3">
+                                <label for="script-path" class="form-label">Script Path *</label>
+                                <input type="text" class="form-control" id="script-path" name="script_path" required
+                                       placeholder="e.g., /path/to/script.sh">
+                                <div class="form-text">Absolute path to the shell script</div>
+                            </div>
 
-                    <div class="form-group">
-                        <label for="cron-expr">Cron Expression (optional)</label>
-                        <input type="text" id="cron-expr" name="cron_expr"
-                               placeholder="e.g., 0 2 * * * (daily at 2 AM)">
-                        <small>Leave empty for manual execution only</small>
-                    </div>
+                            <div class="mb-3">
+                                <label for="cron-expr" class="form-label">Cron Expression (optional)</label>
+                                <input type="text" class="form-control" id="cron-expr" name="cron_expr"
+                                       placeholder="e.g., 0 2 * * * (daily at 2 AM)">
+                                <div class="form-text">Leave empty for manual execution only</div>
+                            </div>
 
-                    <div class="form-group">
-                        <label for="description">Description</label>
-                        <textarea id="description" name="description"
-                                  placeholder="Brief description of what this process does"></textarea>
-                    </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                          placeholder="Brief description of what this process does"></textarea>
+                            </div>
 
-                    <div class="form-actions">
-                        <button type="submit">Register Process</button>
-                        <button type="button" class="secondary" onclick="closeRegisterModal()">Cancel</button>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">Register Process</button>
+                                <button type="button" class="btn btn-secondary" onclick="closeRegisterModal()">Cancel</button>
+                            </div>
+                        </form>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
     </div>
@@ -624,7 +246,7 @@
             currentTab = tabName;
 
             // Update tab buttons
-            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(tab => tab.classList.remove('active'));
             event.target.classList.add('active');
 
             // Update tab content
@@ -651,19 +273,17 @@
                 const list = document.getElementById('launchable-list');
 
                 if (processes.length === 0) {
-                    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><div>No processes registered yet. Click "+ Add Process" to get started.</div></div>';
+                    list.innerHTML = '<div class="alert alert-info text-center"><i class="bi bi-inbox fs-1 d-block mb-3"></i>No processes registered yet. Click "Add Process" to get started.</div>';
                     return;
                 }
 
                 list.innerHTML = processes.map(proc => `
-                    <div class="process-item">
-                        <div class="process-info-col">
-                            <div class="process-name">${proc.name}</div>
-                            <div class="process-description">${proc.description || proc.script_path}</div>
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 text-success">${proc.name}</h6>
+                            <p class="mb-0 text-muted small">${proc.description || proc.script_path}</p>
                         </div>
-                        <div class="process-actions">
-                            <button class="success" onclick="openLaunchModal('${proc.name}')">Launch</button>
-                        </div>
+                        <button class="btn btn-success btn-sm" onclick="openLaunchModal('${proc.name}')">Launch</button>
                     </div>
                 `).join('');
             } catch (error) {
@@ -684,7 +304,7 @@
                 const list = document.getElementById('running-list');
 
                 if (groups.length === 0) {
-                    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💤</div><div>No processes currently running</div></div>';
+                    list.innerHTML = '<div class="alert alert-info text-center"><i class="bi bi-hourglass-split fs-1 d-block mb-3"></i>No processes currently running</div>';
                     return;
                 }
 
@@ -711,40 +331,44 @@
                 });
 
                 list.innerHTML = groups.map((group, idx) => `
-                    <div class="running-group">
-                        <div class="group-header" onclick="toggleGroup('${group.name}')">
-                            <div>
-                                <div class="group-title">${group.name}</div>
-                                <div class="group-subtitle">${group.description || group.script_path}</div>
+                    <div class="card mb-3 border-start border-success border-3">
+                        <div class="card-header bg-dark cursor-pointer" onclick="toggleGroup('${group.name}')" style="cursor: pointer;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 text-success">${group.name}</h6>
+                                    <p class="mb-0 text-muted small">${group.description || group.script_path}</p>
+                                </div>
+                                <span class="badge bg-success">${group.instances.length} running</span>
                             </div>
-                            <div class="instance-count">${group.instances.length} running</div>
                         </div>
                         <div class="group-instances ${expandedGroups.has(group.name) ? 'expanded' : ''}" id="group-${group.name}">
-                            ${group.instances.map(inst => `
-                                <div class="instance-wrapper">
-                                    <div class="instance-item">
-                                        <div class="instance-info">
-                                            <div class="instance-id">ID: ${inst.execution_id}</div>
-                                            <div class="instance-meta">
-                                                PID: ${inst.pid} | Started: ${new Date(inst.start_time).toLocaleString()}
-                                                ${inst.args && inst.args.length > 0 ? ` | Args: ${inst.args.join(' ')}` : ''}
+                            <ul class="list-group list-group-flush">
+                                ${group.instances.map(inst => `
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="flex-grow-1">
+                                                <div class="font-monospace small text-primary">ID: ${inst.execution_id}</div>
+                                                <div class="text-muted small">
+                                                    PID: ${inst.pid} | Started: ${new Date(inst.start_time).toLocaleString()}
+                                                    ${inst.args && inst.args.length > 0 ? ` | Args: ${inst.args.join(' ')}` : ''}
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-secondary btn-sm" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
+                                                <button class="btn btn-danger btn-sm" onclick="stopProcess('${group.name}')">Stop</button>
                                             </div>
                                         </div>
-                                        <div class="process-actions">
-                                            <button class="secondary" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
-                                            <button class="danger" onclick="stopProcess('${group.name}')">Stop</button>
+                                        <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
+                                            <div class="btn-group mb-3" role="group">
+                                                <button type="button" class="btn btn-sm ${!activeLogs[inst.execution_id] || activeLogs[inst.execution_id].stream === 'stdout' ? 'btn-primary' : 'btn-secondary'}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
+                                                <button type="button" class="btn btn-sm ${activeLogs[inst.execution_id]?.stream === 'stderr' ? 'btn-primary' : 'btn-secondary'}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="refreshLogs('${group.name}', '${inst.execution_id}')"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                                            </div>
+                                            <div class="log-content border" id="log-content-${inst.execution_id}"></div>
                                         </div>
-                                    </div>
-                                    <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
-                                        <div class="logs-controls">
-                                            <button class="secondary ${!activeLogs[inst.execution_id] || activeLogs[inst.execution_id].stream === 'stdout' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
-                                            <button class="secondary ${activeLogs[inst.execution_id]?.stream === 'stderr' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
-                                            <button class="secondary" onclick="refreshLogs('${group.name}', '${inst.execution_id}')">↻ Refresh</button>
-                                        </div>
-                                        <div class="log-content" id="log-content-${inst.execution_id}"></div>
-                                    </div>
-                                </div>
-                            `).join('')}
+                                    </li>
+                                `).join('')}
+                            </ul>
                         </div>
                     </div>
                 `).join('');
@@ -783,7 +407,7 @@
                 const list = document.getElementById('stopped-list');
 
                 if (groups.length === 0) {
-                    list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">✓</div><div>No stopped processes</div></div>';
+                    list.innerHTML = '<div class="alert alert-success text-center"><i class="bi bi-check-circle fs-1 d-block mb-3"></i>No stopped processes</div>';
                     return;
                 }
 
@@ -810,38 +434,40 @@
                 });
 
                 list.innerHTML = groups.map((group, idx) => `
-                    <div class="running-group">
-                        <div class="group-header" onclick="toggleGroup('stopped-${group.name}')">
-                            <div>
-                                <div class="group-title">${group.name}</div>
-                                <div class="group-subtitle">${group.description || group.script_path}</div>
+                    <div class="card mb-3 border-start border-secondary border-3">
+                        <div class="card-header bg-dark cursor-pointer" onclick="toggleGroup('stopped-${group.name}')" style="cursor: pointer;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1 text-secondary">${group.name}</h6>
+                                    <p class="mb-0 text-muted small">${group.description || group.script_path}</p>
+                                </div>
+                                <span class="badge bg-secondary">${group.instances.length} stopped</span>
                             </div>
-                            <div class="instance-count">${group.instances.length} stopped</div>
                         </div>
                         <div class="group-instances ${expandedGroups.has('stopped-' + group.name) ? 'expanded' : ''}" id="group-stopped-${group.name}">
-                            ${group.instances.map(inst => `
-                                <div class="instance-wrapper">
-                                    <div class="instance-item">
-                                        <div class="instance-info">
-                                            <div class="instance-id">ID: ${inst.execution_id}</div>
-                                            <div class="instance-meta">
-                                                Status: ${inst.status} | Exit code: ${inst.exit_code !== null ? inst.exit_code : 'N/A'} | Started: ${new Date(inst.start_time).toLocaleString()}
+                            <ul class="list-group list-group-flush">
+                                ${group.instances.map(inst => `
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="flex-grow-1">
+                                                <div class="font-monospace small text-primary">ID: ${inst.execution_id}</div>
+                                                <div class="text-muted small">
+                                                    Status: ${inst.status} | Exit code: ${inst.exit_code !== null ? inst.exit_code : 'N/A'} | Started: ${new Date(inst.start_time).toLocaleString()}
+                                                </div>
                                             </div>
+                                            <button class="btn btn-secondary btn-sm" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
                                         </div>
-                                        <div class="process-actions">
-                                            <button class="secondary" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
+                                        <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
+                                            <div class="btn-group mb-3" role="group">
+                                                <button type="button" class="btn btn-sm ${!activeLogs[inst.execution_id] || activeLogs[inst.execution_id].stream === 'stdout' ? 'btn-primary' : 'btn-secondary'}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
+                                                <button type="button" class="btn btn-sm ${activeLogs[inst.execution_id]?.stream === 'stderr' ? 'btn-primary' : 'btn-secondary'}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="refreshLogs('${group.name}', '${inst.execution_id}')"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                                            </div>
+                                            <div class="log-content border" id="log-content-${inst.execution_id}"></div>
                                         </div>
-                                    </div>
-                                    <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
-                                        <div class="logs-controls">
-                                            <button class="secondary ${!activeLogs[inst.execution_id] || activeLogs[inst.execution_id].stream === 'stdout' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
-                                            <button class="secondary ${activeLogs[inst.execution_id]?.stream === 'stderr' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
-                                            <button class="secondary" onclick="refreshLogs('${group.name}', '${inst.execution_id}')">↻ Refresh</button>
-                                        </div>
-                                        <div class="log-content" id="log-content-${inst.execution_id}"></div>
-                                    </div>
-                                </div>
-                            `).join('')}
+                                    </li>
+                                `).join('')}
+                            </ul>
                         </div>
                     </div>
                 `).join('');
@@ -886,11 +512,23 @@
             document.getElementById('launch-process-name').value = name;
             document.getElementById('launch-args').value = '';
             document.getElementById('launch-message').innerHTML = '';
-            document.getElementById('launch-modal').classList.add('active');
+            const modal = document.getElementById('launch-modal');
+            modal.classList.add('show');
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            backdrop.id = 'launch-modal-backdrop';
+            document.body.appendChild(backdrop);
         }
 
         function closeLaunchModal() {
-            document.getElementById('launch-modal').classList.remove('active');
+            const modal = document.getElementById('launch-modal');
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            const backdrop = document.getElementById('launch-modal-backdrop');
+            if (backdrop) backdrop.remove();
         }
 
         async function launchProcess(event) {
@@ -912,7 +550,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    messageDiv.innerHTML = `<div class="success-message">Process launched successfully! PID: ${result.execution.pid}</div>`;
+                    messageDiv.innerHTML = `<div class="alert alert-success">Process launched successfully! PID: ${result.execution.pid}</div>`;
                     setTimeout(() => {
                         closeLaunchModal();
                         if (currentTab === 'running') {
@@ -920,10 +558,10 @@
                         }
                     }, 1500);
                 } else {
-                    messageDiv.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                    messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${result.error}</div>`;
                 }
             } catch (error) {
-                messageDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+                messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             }
         }
 
@@ -961,12 +599,6 @@
 
         // Switch between stdout and stderr
         function switchStream(name, executionId, stream) {
-            // Update button states
-            const accordion = document.getElementById(`logs-${executionId}`);
-            const buttons = accordion.querySelectorAll('.logs-controls button');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-
             // Update tracking and load logs
             activeLogs[executionId] = { name, stream };
             loadInlineLogs(name, executionId, stream);
@@ -1000,13 +632,25 @@
 
         // Register modal
         function openRegisterModal() {
-            document.getElementById('register-modal').classList.add('active');
+            const modal = document.getElementById('register-modal');
+            modal.classList.add('show');
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            backdrop.id = 'register-modal-backdrop';
+            document.body.appendChild(backdrop);
             document.getElementById('register-form').reset();
             document.getElementById('register-message').innerHTML = '';
         }
 
         function closeRegisterModal() {
-            document.getElementById('register-modal').classList.remove('active');
+            const modal = document.getElementById('register-modal');
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            const backdrop = document.getElementById('register-modal-backdrop');
+            if (backdrop) backdrop.remove();
         }
 
         async function registerProcess(event) {
@@ -1033,17 +677,17 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    messageDiv.innerHTML = `<div class="success-message">Process "${data.name}" registered successfully!</div>`;
+                    messageDiv.innerHTML = `<div class="alert alert-success">Process "${data.name}" registered successfully!</div>`;
                     form.reset();
                     setTimeout(() => {
                         updateLaunchableProcesses();
                         closeRegisterModal();
                     }, 1500);
                 } else {
-                    messageDiv.innerHTML = `<div class="error-message">Error: ${result.error}</div>`;
+                    messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${result.error}</div>`;
                 }
             } catch (error) {
-                messageDiv.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+                messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
             }
         }
 
@@ -1085,12 +729,14 @@
         }
 
         // Close modals when clicking outside
-        document.querySelectorAll('.modal').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('active');
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                if (e.target.id === 'launch-modal') {
+                    closeLaunchModal();
+                } else if (e.target.id === 'register-modal') {
+                    closeRegisterModal();
                 }
-            });
+            }
         });
 
         // Socket.IO connection
@@ -1128,5 +774,6 @@
             }
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
