@@ -685,6 +685,17 @@
                 // Merge with persistent state
                 currentExpandedGroups.forEach(name => expandedGroups.add(name));
 
+                // Save log content before regenerating HTML
+                const savedLogContent = {};
+                groups.forEach(group => {
+                    group.instances.forEach(inst => {
+                        const logDiv = document.getElementById(`log-content-${inst.execution_id}`);
+                        if (logDiv) {
+                            savedLogContent[inst.execution_id] = logDiv.textContent;
+                        }
+                    });
+                });
+
                 list.innerHTML = groups.map((group, idx) => `
                     <div class="running-group">
                         <div class="group-header" onclick="toggleGroup('${group.name}')">
@@ -710,18 +721,27 @@
                                             <button class="danger" onclick="stopProcess('${group.name}')">Stop</button>
                                         </div>
                                     </div>
-                                    <div class="logs-accordion" id="logs-${inst.execution_id}">
+                                    <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
                                         <div class="logs-controls">
-                                            <button class="secondary active" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
-                                            <button class="secondary" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
+                                            <button class="secondary ${!activeLogs[inst.execution_id] || activeLogs[inst.execution_id].stream === 'stdout' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stdout')">stdout</button>
+                                            <button class="secondary ${activeLogs[inst.execution_id]?.stream === 'stderr' ? 'active' : ''}" onclick="switchStream('${group.name}', '${inst.execution_id}', 'stderr')">stderr</button>
+                                            <button class="secondary" onclick="refreshLogs('${group.name}', '${inst.execution_id}')">↻ Refresh</button>
                                         </div>
-                                        <div class="log-content" id="log-content-${inst.execution_id}">Loading logs...</div>
+                                        <div class="log-content" id="log-content-${inst.execution_id}"></div>
                                     </div>
                                 </div>
                             `).join('')}
                         </div>
                     </div>
                 `).join('');
+
+                // Restore saved log content after HTML regeneration
+                Object.keys(savedLogContent).forEach(executionId => {
+                    const logDiv = document.getElementById(`log-content-${executionId}`);
+                    if (logDiv && savedLogContent[executionId]) {
+                        logDiv.textContent = savedLogContent[executionId];
+                    }
+                });
             } catch (error) {
                 console.error('Error fetching running processes:', error);
             }
@@ -848,10 +868,11 @@
             }
         }
 
-        // Periodic update of active logs
-        async function updateActiveLogs() {
-            for (const [executionId, info] of Object.entries(activeLogs)) {
-                await loadInlineLogs(info.name, executionId, info.stream);
+        // Refresh logs for current stream
+        function refreshLogs(name, executionId) {
+            const logInfo = activeLogs[executionId];
+            if (logInfo) {
+                loadInlineLogs(name, executionId, logInfo.stream);
             }
         }
 
@@ -976,9 +997,9 @@
                         updateLaunchableProcesses();
                     } else {
                         updateRunningProcesses();
-                        updateActiveLogs();
                     }
                 }, 2000);
+
                 setInterval(updateSchedulerInfo, 5000);
             }
         });
