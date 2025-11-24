@@ -304,7 +304,8 @@
                     <div class="list-group-item d-flex justify-content-between align-items-start">
                         <div class="flex-grow-1">
                             <h6 class="mb-1 text-success">${proc.name}</h6>
-                            <p class="mb-0 text-muted small">${proc.description || proc.script_path}</p>
+                            <p class="mb-1 text-muted small">${proc.description || 'No description'}</p>
+                            <p class="mb-0 font-monospace small text-secondary">Command: /bin/bash ${proc.script_path}</p>
                         </div>
                         <button class="btn btn-success btn-sm" onclick="openLaunchModal('${proc.name}')">Launch</button>
                     </div>
@@ -378,7 +379,9 @@
                                                 <div class="font-monospace small text-primary">ID: ${inst.execution_id}</div>
                                                 <div class="text-muted small">
                                                     PID: ${inst.pid} | Started: ${new Date(inst.start_time).toLocaleString()}
-                                                    ${inst.args && inst.args.length > 0 ? ` | Args: ${inst.args.join(' ')}` : ''}
+                                                </div>
+                                                <div class="font-monospace small text-secondary">
+                                                    Command: /bin/bash ${group.script_path}${inst.args && inst.args.length > 0 ? ' ' + inst.args.join(' ') : ''}
                                                 </div>
                                             </div>
                                             <div class="d-flex gap-2">
@@ -493,6 +496,9 @@
                                                 <div class="text-muted small">
                                                     Status: ${inst.status} | Exit code: ${inst.exit_code !== null ? inst.exit_code : 'N/A'} | Started: ${new Date(inst.start_time).toLocaleString()}
                                                 </div>
+                                                <div class="font-monospace small text-secondary">
+                                                    Command: /bin/bash ${group.script_path}${inst.args && inst.args.length > 0 ? ' ' + inst.args.join(' ') : ''}
+                                                </div>
                                             </div>
                                             <div class="btn-group btn-group-sm">
                                                 <button class="btn btn-success" onclick="restartProcess('${group.name}')">
@@ -589,6 +595,13 @@
             const args = argsStr ? argsStr.split(/\s+/) : [];
 
             const messageDiv = document.getElementById('launch-message');
+            const submitBtn = event.target.querySelector('[type="submit"]');
+
+            // Disable submit button to prevent duplicate launches
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Launching...';
+            }
 
             try {
                 const response = await fetch(`/api/processes/${name}/run`, {
@@ -600,18 +613,25 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    messageDiv.innerHTML = `<div class="alert alert-success">Process launched successfully! PID: ${result.execution.pid}</div>`;
-                    setTimeout(() => {
-                        closeLaunchModal();
-                        if (currentTab === 'running') {
-                            updateRunningProcesses();
-                        }
-                    }, 1500);
+                    // Close modal immediately on success
+                    closeLaunchModal();
+                    // Switch to running tab to see the new process
+                    switchTab('running');
                 } else {
                     messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${result.error}</div>`;
+                    // Re-enable button on error
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Launch';
+                    }
                 }
             } catch (error) {
                 messageDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+                // Re-enable button on error
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Launch';
+                }
             }
         }
 
@@ -843,12 +863,50 @@
             }
         });
 
+        // Track last state to detect changes
+        let lastRunningState = null;
+        let lastStoppedState = null;
+
+        // Smart polling - only update if something changed
+        async function smartPoll() {
+            if (currentTab === 'running') {
+                try {
+                    const response = await fetch('/api/processes/running');
+                    if (response.ok) {
+                        const newState = JSON.stringify(await response.json());
+                        if (lastRunningState !== newState) {
+                            lastRunningState = newState;
+                            updateRunningProcesses();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling running processes:', error);
+                }
+            } else if (currentTab === 'stopped') {
+                try {
+                    const response = await fetch('/api/processes/stopped');
+                    if (response.ok) {
+                        const newState = JSON.stringify(await response.json());
+                        if (lastStoppedState !== newState) {
+                            lastStoppedState = newState;
+                            updateStoppedProcesses();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error polling stopped processes:', error);
+                }
+            }
+        }
+
         // Initial load
         window.addEventListener('load', async () => {
             const authenticated = await checkAuth();
             if (authenticated) {
                 updateLaunchableProcesses();
                 updateSchedulerInfo();
+
+                // Start smart polling every 10 seconds
+                setInterval(smartPoll, 10000);
             }
         });
     </script>

@@ -294,12 +294,22 @@ def get_running_processes():
                         from datetime import datetime
                         start_time = datetime.strptime(start_time_str, "%Y-%m-%d %H:%M:%S").isoformat()
 
+                        # Load args from file if exists
+                        args = []
+                        args_file = exec_dir / f"{execution_id}.args"
+                        if args_file.exists():
+                            try:
+                                with open(args_file, 'r') as f:
+                                    args = [line.strip() for line in f.readlines() if line.strip()]
+                            except:
+                                pass
+
                         running_execs.append({
                             "execution_id": execution_id,
                             "name": name,
                             "pid": pid,
                             "status": "running",
-                            "args": [],
+                            "args": args,
                             "start_time": start_time,
                             "end_time": None,
                             "exit_code": None,
@@ -372,11 +382,22 @@ def get_stopped_processes():
                     except (ValueError, FileNotFoundError):
                         pass
 
+                # Read args from file if exists
+                args = []
+                args_file = exec_dir / f"{execution_id}.args"
+                if args_file.exists():
+                    try:
+                        with open(args_file, 'r') as f:
+                            args = [line.strip() for line in f.readlines() if line.strip()]
+                    except:
+                        pass
+
                 stopped_execs.append({
                     "execution_id": execution_id,
                     "name": name,
                     "start_time": start_time,
                     "exit_code": exit_code,
+                    "args": args,
                     "status": "completed" if exit_code == 0 else "failed" if exit_code else "stopped"
                 })
 

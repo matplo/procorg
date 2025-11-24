@@ -86,6 +86,12 @@ class ProcessExecution:
             with open(pid_file, 'w') as f:
                 f.write(str(self.pid))
 
+            # Save args to file for cross-request status tracking
+            if self.args:
+                args_file = self.storage.logs_dir / self.name / f"{self.execution_id}.args"
+                with open(args_file, 'w') as f:
+                    f.write('\n'.join(self.args))
+
             # Start a thread to monitor completion
             # Note: Using daemon=False so the thread can complete even if the request handler returns
             t = threading.Thread(target=self._monitor, args=(stdout_file, stderr_file), daemon=False)
