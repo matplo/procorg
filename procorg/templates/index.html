@@ -319,13 +319,15 @@
                 // Merge with persistent state
                 currentExpandedGroups.forEach(name => expandedGroups.add(name));
 
-                // Save log content before regenerating HTML
+                // Save log content and scroll position before regenerating HTML
                 const savedLogContent = {};
+                const savedScrollPositions = {};
                 groups.forEach(group => {
                     group.instances.forEach(inst => {
                         const logDiv = document.getElementById(`log-content-${inst.execution_id}`);
                         if (logDiv) {
                             savedLogContent[inst.execution_id] = logDiv.textContent;
+                            savedScrollPositions[inst.execution_id] = logDiv.scrollTop;
                         }
                     });
                 });
@@ -373,11 +375,14 @@
                     </div>
                 `).join('');
 
-                // Restore saved log content after HTML regeneration
+                // Restore saved log content and scroll position after HTML regeneration
                 Object.keys(savedLogContent).forEach(executionId => {
                     const logDiv = document.getElementById(`log-content-${executionId}`);
                     if (logDiv && savedLogContent[executionId]) {
                         logDiv.textContent = savedLogContent[executionId];
+                        if (savedScrollPositions[executionId] !== undefined) {
+                            logDiv.scrollTop = savedScrollPositions[executionId];
+                        }
                     }
                 });
             } catch (error) {
@@ -422,13 +427,15 @@
                 // Merge with persistent state
                 currentExpandedGroups.forEach(name => expandedGroups.add(name));
 
-                // Save log content before regenerating
+                // Save log content and scroll position before regenerating
                 const savedLogContent = {};
+                const savedScrollPositions = {};
                 groups.forEach(group => {
                     group.instances.forEach(inst => {
                         const logDiv = document.getElementById(`log-content-${inst.execution_id}`);
                         if (logDiv) {
                             savedLogContent[inst.execution_id] = logDiv.textContent;
+                            savedScrollPositions[inst.execution_id] = logDiv.scrollTop;
                         }
                     });
                 });
@@ -472,11 +479,14 @@
                     </div>
                 `).join('');
 
-                // Restore saved log content
+                // Restore saved log content and scroll position
                 Object.keys(savedLogContent).forEach(executionId => {
                     const logDiv = document.getElementById(`log-content-${executionId}`);
                     if (logDiv && savedLogContent[executionId]) {
                         logDiv.textContent = savedLogContent[executionId];
+                        if (savedScrollPositions[executionId] !== undefined) {
+                            logDiv.scrollTop = savedScrollPositions[executionId];
+                        }
                     }
                 });
             } catch (error) {
