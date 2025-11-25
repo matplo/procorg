@@ -445,7 +445,7 @@ def clear_stopped_processes():
             # Only delete if not currently running
             if not pid_file.exists():
                 # Delete all related files for this execution
-                for ext in ['.stdout.log', '.stderr.log', '.exitcode']:
+                for ext in ['.stdout.log', '.stderr.log', '.exitcode', '.args']:
                     file_path = exec_dir / f"{execution_id}{ext}"
                     if file_path.exists():
                         try:
@@ -453,6 +453,50 @@ def clear_stopped_processes():
                             deleted_count += 1
                         except Exception as e:
                             print(f"Error deleting {file_path}: {e}")
+
+    return jsonify({'success': True, 'deleted_files': deleted_count})
+
+
+@app.route('/api/processes/<name>/executions/<execution_id>', methods=['DELETE'])
+@require_auth
+def delete_execution(name, execution_id):
+    """Delete logs for a specific execution."""
+    user = get_current_user()
+    storage = Storage(uid=user.uid)
+
+    # Verify process exists and user has permission
+    proc = storage.get_process(name)
+    if not proc:
+        return jsonify({'success': False, 'error': 'Process not found'}), 404
+
+    # Check ownership
+    proc_owner = proc.get('owner_uid')
+    if not user.is_root and proc_owner is not None and proc_owner != user.uid:
+        return jsonify({'error': 'Permission denied'}), 403
+
+    exec_dir = storage.logs_dir / name
+    if not exec_dir.exists():
+        return jsonify({'success': False, 'error': 'No logs found'}), 404
+
+    # Check if execution is still running
+    pid_file = exec_dir / f"{execution_id}.pid"
+    if pid_file.exists():
+        return jsonify({'success': False, 'error': 'Cannot delete logs for running process'}), 400
+
+    # Delete all related files for this execution
+    deleted_count = 0
+    for ext in ['.stdout.log', '.stderr.log', '.exitcode', '.args']:
+        file_path = exec_dir / f"{execution_id}{ext}"
+        if file_path.exists():
+            try:
+                file_path.unlink()
+                deleted_count += 1
+            except Exception as e:
+                print(f"Error deleting {file_path}: {e}")
+                return jsonify({'success': False, 'error': f'Failed to delete file: {e}'}), 500
+
+    if deleted_count == 0:
+        return jsonify({'success': False, 'error': 'No logs found for this execution'}), 404
 
     return jsonify({'success': True, 'deleted_files': deleted_count})
 

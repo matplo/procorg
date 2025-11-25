@@ -512,6 +512,9 @@
                                                     <i class="bi bi-arrow-clockwise"></i> Restart
                                                 </button>
                                                 <button class="btn btn-secondary" onclick="toggleLogs('${group.name}', '${inst.execution_id}')">Logs</button>
+                                                <button class="btn btn-danger" onclick="deleteExecution('${group.name}', '${inst.execution_id}')" title="Delete this execution's logs">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
                                             </div>
                                         </div>
                                         <div class="logs-accordion ${activeLogs[inst.execution_id] ? 'active' : ''}" id="logs-${inst.execution_id}">
@@ -697,6 +700,31 @@
             } catch (error) {
                 console.error('Error deleting process:', error);
                 alert(`Error deleting process: ${error.message}`);
+            }
+        }
+
+        // Delete a specific execution's logs
+        async function deleteExecution(name, executionId) {
+            if (!confirm(`Are you sure you want to delete the logs for this execution?\n\nExecution ID: ${executionId}\n\nThis will permanently delete all logs (stdout, stderr) for this specific run.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/processes/${name}/executions/${executionId}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Refresh the stopped processes list
+                    updateStoppedProcesses();
+                } else {
+                    alert(`Failed to delete execution logs: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error deleting execution:', error);
+                alert(`Error deleting execution: ${error.message}`);
             }
         }
 
