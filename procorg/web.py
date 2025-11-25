@@ -498,8 +498,16 @@ def get_logs(name, stream):
     if not user.is_root and proc_owner is not None and proc_owner != user.uid:
         return jsonify({'error': 'Permission denied'}), 403
 
-    lines = request.args.get('lines', 100, type=int)
-    log_content = manager.get_latest_logs(name, stream, lines)
+    # Get optional execution_id parameter
+    execution_id = request.args.get('execution_id')
+
+    if execution_id:
+        # Get logs for specific execution
+        log_content = manager.get_execution_logs(name, execution_id, stream)
+    else:
+        # Get latest logs (backward compatibility)
+        lines = request.args.get('lines', 100, type=int)
+        log_content = manager.get_latest_logs(name, stream, lines)
 
     return jsonify({
         'name': name,

@@ -727,7 +727,7 @@
         // Load logs for a specific execution
         async function loadInlineLogs(name, executionId, stream) {
             try {
-                const response = await fetch(`/api/processes/${name}/logs/${stream}`);
+                const response = await fetch(`/api/processes/${name}/logs/${stream}?execution_id=${executionId}`);
                 const data = await response.json();
                 const contentDiv = document.getElementById(`log-content-${executionId}`);
                 if (contentDiv) {
