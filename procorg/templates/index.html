@@ -568,6 +568,15 @@
             document.getElementById('launch-process-name').value = name;
             document.getElementById('launch-args').value = '';
             document.getElementById('launch-message').innerHTML = '';
+
+            // Reset submit button state
+            const form = document.getElementById('launch-form');
+            const submitBtn = form.querySelector('[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Launch';
+            }
+
             const modal = document.getElementById('launch-modal');
             modal.classList.add('show');
             modal.style.display = 'block';
