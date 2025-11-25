@@ -122,15 +122,57 @@ Then open your browser to `http://localhost:9777`
 
 ## Web Interface
 
-The web interface provides:
+The web interface provides a modern, feature-rich dashboard for process management:
 
-- **Process Registration**: Register new processes directly from the web UI with a user-friendly form
-- **Process Management**: Delete processes with confirmation dialogs
-- **Real-time Monitoring**: Live process status updates via WebSockets
-- **Process Control**: Start and stop processes with one click
-- **Live Logs**: View stdout/stderr in real-time with easy switching
-- **Scheduler Control**: Start/stop the scheduler and view scheduled processes
-- **Modern UI**: Clean, dark theme with visual status indicators
+### Core Features
+
+- **Three-Tab Interface**:
+  - **Launchable Processes**: View all registered processes and launch them with optional arguments
+  - **Running Processes**: Monitor active processes with real-time status and inline logs
+  - **Stopped Processes**: Review completed processes with exit codes and full logs
+
+- **Process Management**:
+  - Register new processes with descriptions and cron schedules
+  - Launch processes with custom command-line arguments
+  - Stop running processes instantly
+  - Restart stopped processes with one click
+  - View full command line with arguments for each execution
+
+- **Advanced Log Viewing**:
+  - Inline log display within process cards (no separate pages)
+  - Toggle between stdout and stderr streams
+  - Manual refresh button for log updates
+  - Scroll position preservation during updates
+  - Monospace formatting for better log readability
+  - View logs for both running and stopped processes
+
+- **Smart Updates**:
+  - 10-second intelligent polling (only updates when data changes)
+  - No screen flashing or scroll jumps
+  - Automatic status updates when processes complete
+  - Preserved accordion states across refreshes
+
+- **Modern Bootstrap UI**:
+  - Bootstrap 5 dark theme with consistent styling
+  - Fully offline-capable (all assets served locally)
+  - Responsive design for different screen sizes
+  - Process grouping by name with expandable instances
+  - Visual status indicators (badges, icons)
+  - Instant button feedback (no duplicate submissions)
+
+- **Scheduler Control**:
+  - Start/stop the scheduler from the web UI
+  - View scheduled processes and next run times
+  - Real-time scheduler status indicator
+
+### Web UI Screenshots
+
+The interface features:
+- Clean card-based layout for process groups
+- Expandable accordions for multiple process instances
+- Inline log viewers with stdout/stderr toggle
+- Command-line display showing full execution commands
+- Color-coded status badges (green for running, gray for stopped)
 
 Access the web UI at `http://localhost:9777` (or use port 9778 if 9777 is in use)
 
