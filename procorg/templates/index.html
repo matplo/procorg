@@ -307,7 +307,14 @@
                             <p class="mb-1 text-muted small">${proc.description || 'No description'}</p>
                             <p class="mb-0 font-monospace small text-secondary">Command: /bin/bash ${proc.script_path}</p>
                         </div>
-                        <button class="btn btn-success btn-sm" onclick="openLaunchModal('${proc.name}')">Launch</button>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-success" onclick="openLaunchModal('${proc.name}')">
+                                <i class="bi bi-play-fill"></i> Launch
+                            </button>
+                            <button class="btn btn-danger" onclick="deleteProcess('${proc.name}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 `).join('');
             } catch (error) {
@@ -665,6 +672,31 @@
             } catch (error) {
                 console.error('Error restarting process:', error);
                 alert(`Error restarting process: ${error.message}`);
+            }
+        }
+
+        // Delete/unregister a process
+        async function deleteProcess(name) {
+            if (!confirm(`Are you sure you want to delete the process "${name}"?\n\nThis will remove it from the registry but will not delete any existing logs.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/processes/${name}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Refresh the launchable processes list
+                    updateLaunchableProcesses();
+                } else {
+                    alert(`Failed to delete process: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Error deleting process:', error);
+                alert(`Error deleting process: ${error.message}`);
             }
         }
 
